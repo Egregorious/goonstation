@@ -378,6 +378,7 @@
 			var/obj/item/genetics_injector/dna_injector/I = new /obj/item/genetics_injector/dna_injector(src.loc)
 			I.name = "dna injector - [E.name]"
 			E.can_make_injector = 0
+			E.can_make_injector = 0
 			var/datum/bioEffect/NEW = new E.type(I)
 			copy_datum_vars(E, NEW, blacklist=list("owner", "holder", "dnaBlocks"))
 			I.BE = NEW
