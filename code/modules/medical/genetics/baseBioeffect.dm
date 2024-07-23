@@ -48,7 +48,7 @@ ABSTRACT_TYPE(/datum/bioEffect)
 	var/can_scramble = 1 // Can this gene be scrambled with the emitter?
 	var/can_copy = 1 //Is this gene copied over on bioHolder transfer (i.e. cloning?)
 	var/can_research = 1 // If zero, it must be researched via brute force
-	var/can_make_injector = 1 // Guess.
+	var/can_make_injector = 1 // Can this gene be made into an injector, sent to the booth, or made an activator?
 	var/req_mut_research = null // If set, need to research the mutation before you can do anything w/ this one
 	var/reclaim_mats = 10 // Materials returned when this gene is reclaimed
 	var/reclaim_fail = 5 // Chance % for a reclamation of this gene to fail
