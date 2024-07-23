@@ -378,7 +378,6 @@
 			var/obj/item/genetics_injector/dna_injector/I = new /obj/item/genetics_injector/dna_injector(src.loc)
 			I.name = "dna injector - [E.name]"
 			E.can_make_injector = 0
-			E.can_make_injector = 0
 			var/datum/bioEffect/NEW = new E.type(I)
 			copy_datum_vars(E, NEW, blacklist=list("owner", "holder", "dnaBlocks"))
 			I.BE = NEW
@@ -888,6 +887,7 @@
 			"icon" = research_level >= EFFECT_RESEARCH_DONE ? BE.icon_state : "unknown",
 			"time" = GBE.research_finish_time,
 			"canResearch" = BE.can_research,
+			"canInject" = BE.can_make_injector,
 			"canScramble" = BE.can_scramble,
 			"canReclaim" = BE.can_reclaim,
 			"spliceError" = src.to_splice?.check_apply(BE),
