@@ -11,6 +11,7 @@ var/datum/geneticsResearchManager/genResearch = new()
 	var/mut_research_time = 600
 	var/mutations_researched = 0
 	var/injector_cost = 30
+	var/sampler_cost = 30
 	var/genebooth_cost = 30
 	var/debug_mode = 0
 	var/see_secret = 0
@@ -389,6 +390,14 @@ var/datum/geneticsResearchManager/genResearch = new()
 	onFinish()
 		genResearch.max_save_slots += 3
 		..()
+
+/datum/geneticsResearchEntry/sampler
+	name = "DNA Samplers"
+	desc = "Allows the manufacture of implements which can extract copies of genes from subject potentials. Samplers cost 30 materials to manufacture."
+	researchTime = 1100
+	researchCost = 90
+	tier = 3
+	requiredResearch = list(/datum/geneticsResearchEntry/saver)
 
 /datum/geneticsResearchEntry/rad_precision
 	name = "Precision Radiation Emitters"

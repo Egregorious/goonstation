@@ -66,6 +66,29 @@
 			qdel(DNA)
 		else
 			src.Attackhand(user)
+
+	else if (istype(W,/obj/item/genetics_injector/dna_sampler)) // sampler
+		var/obj/item/genetics_injector/dna_sampler/DNA = W
+
+		if (DNA.expended_properly)
+			if (length(saved_mutations) >= genResearch.max_save_slots)
+				boutput(user, "Mutation storage is full.")
+			else
+				var/datum/bioEffect/GBE = bioEffectList[DNA.gene_to_sample]
+				if (GBE)
+					var/datum/bioEffect/NEW = GBE.GetCopy()
+					src.saved_mutations += NEW
+					user.drop_item()
+					qdel(DNA)
+
+
+		else if (DNA.uses < 1)
+			// You get nothing from these but at least let people clean em up
+			boutput(user, "You dispose of the [DNA].")
+			user.drop_item()
+			qdel(DNA)
+		else
+			src.Attackhand(user)
 	else
 		var/obj/item/card/id/ID = get_id_card(W)
 		if (istype(ID))
@@ -166,6 +189,12 @@
 		if("activator")
 			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_DONE)
 				if(world.time >= src.equipment[GENETICS_INJECTORS])
+					return 1
+		if("sampler") // sampler
+			if(genResearch.researchMaterial < genResearch.sampler_cost)
+				return 0
+			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_DONE)
+				if(genResearch.isResearched(/datum/geneticsResearchEntry/sampler) && world.time >= src.equipment[GENETICS_INJECTORS])
 					return 1
 		if("saver")
 			if(E && GBE?.research_level >= EFFECT_RESEARCH_DONE)
@@ -355,6 +384,23 @@
 				var/obj/item/genetics_injector/dna_activator/I = new(src.loc)
 				I.name = "dna activator - [E.name]"
 				I.gene_to_activate = E.id
+				on_ui_interacted(ui.user)
+				playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+		if("sampler")  // sampler
+			. = TRUE
+			var/datum/bioEffect/E = locate(params["ref"])
+			var/datum/bioEffect/GBE = E.get_global_instance()
+			if (GBE.research_level < EFFECT_RESEARCH_DONE)
+				src.log_maybe_cheater(usr, "tried to create a [E.id] sampler on an unresearched gene (href spoofing?)")
+				return
+			if (!E.can_make_injector)
+				src.log_maybe_cheater(usr, "tried to create a [E.id] sampler (non-injectable gene)")
+				return
+			if (!bioEffect_sanity_check(E, 0) && src.equipment_available("sampler", E))
+				src.equipment_cooldown(GENETICS_INJECTORS, 200)
+				var/obj/item/genetics_injector/dna_sampler/I = new /obj/item/genetics_injector/dna_sampler(src.loc)
+				I.name = "dna sampler - [E.name]"
+				I.gene_to_sample = E.id
 				on_ui_interacted(ui.user)
 				playsound(src, 'sound/machines/click.ogg', 50, TRUE)
 		if("injector")
@@ -1081,19 +1127,19 @@
 		))
 
 /obj/machinery/computer/genetics/ui_static_data(mob/user)
-	. = list(
-			"boothCost" = genResearch.isResearched(/datum/geneticsResearchEntry/genebooth) ? genResearch.genebooth_cost : -1,
-			"injectorCost" = genResearch.isResearched(/datum/geneticsResearchEntry/injector) ? genResearch.injector_cost : -1,
-			"saveSlots" = genResearch.isResearched(/datum/geneticsResearchEntry/saver) ? genResearch.max_save_slots : 0,
-			"precisionEmitter" = genResearch.isResearched(/datum/geneticsResearchEntry/rad_precision),
-			"materialMax" = genResearch.max_material,
-			"mutantRaces" = list(list(
-				"name" = "Clear Mutantrace",
-				"icon" = "template",
-				"ref" = "\ref[null]",
-				)
-			),
-		)
+	. = list("research"=list(),
+					"boothCost" = genResearch.isResearched(/datum/geneticsResearchEntry/genebooth) ? genResearch.genebooth_cost : -1,
+					"injectorCost" = genResearch.isResearched(/datum/geneticsResearchEntry/injector) ? genResearch.injector_cost : -1,
+					"samplerCost" = genResearch.isResearched(/datum/geneticsResearchEntry/sampler) ? genResearch.sampler_cost : -1,
+					"saveSlots" = genResearch.isResearched(/datum/geneticsResearchEntry/saver) ? genResearch.max_save_slots : 0,
+					"precisionEmitter" = genResearch.isResearched(/datum/geneticsResearchEntry/rad_precision),
+					"materialMax" = genResearch.max_material,
+					"mutantRaces" = list(list(
+						"name" = "Clear Mutantrace",
+						"icon" = "template",
+						"ref" = "\ref[null]",
+						)),
+					)
 
 	var/bioEffects = list()
 	for (var/id as anything in bioEffectList)

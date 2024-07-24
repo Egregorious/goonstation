@@ -109,6 +109,50 @@ ADMIN_INTERACT_PROCS(/obj/item/genetics_injector/dna_injector, proc/admin_comman
 					src.desc = "A [src] that has been used up. It should be disposed of."
 					src.name = "expended " + src.name
 
+	dna_sampler
+		name = "dna sampler"
+		desc = "A syringe designed to take a sample of a living organism's genes."
+		var/gene_to_sample = null // the gene to be sampled
+		var/expended_properly = 0
+		icon_state = "activator_1"
+
+		injected(var/mob/living/carbon/user,var/mob/living/carbon/target)
+			if (isnull(gene_to_sample)) return
+			if (..())
+				return
+
+			var/datum/bioEffect/BE
+			for(var/X in target.bioHolder.effectPool)
+				BE = target.bioHolder.effectPool[X]
+				if (BE && BE.id == gene_to_sample && BE.can_make_injector)
+					if (!isnpcmonkey(target) && target.client)
+						src.expended_properly = 1
+						BE.can_make_injector = 0
+						// update the subject's medical record
+						// Need to find a better way to identify the subject's records that doesn't change due to holding an ID card
+						var/datum/db_record/record = data_core.medical.find_record("name", target.name)
+						if (record)
+							var/datum/computer/file/genetics_scan/scan = record["dnasample"]
+							for (var/datum/bioEffect/RBE in scan.dna_pool)
+								if(RBE && RBE.id == gene_to_sample)
+									RBE.can_make_injector = 0
+									break
+					break
+
+			src.uses--
+			src.update_appearance()
+
+		update_appearance()
+			if(src.uses < 1)
+				if (expended_properly)
+					src.icon_state = "activator_3"
+					src.desc = "A [src] that has been filled with a sample of a gene."
+					src.name = "filled " + src.name
+				else
+					src.icon_state = "activator_2"
+					src.desc = "A [src] that has been improperly expended. It should be discarded."
+					src.name = "expended " + src.name
+
 /datum/action/bar/icon/genetics_injector
 	duration = 20
 	interrupt_flags = INTERRUPT_MOVE | INTERRUPT_ACT | INTERRUPT_STUNNED | INTERRUPT_ACTION

@@ -30,6 +30,7 @@ export interface GeneTekData {
   research: Record<Ref, ResearchEntry>;
   boothCost: number;
   injectorCost: number;
+  samplerCost: number;
   saveSlots: number;
   precisionEmitter: BooleanLike;
   materialMax: number;
