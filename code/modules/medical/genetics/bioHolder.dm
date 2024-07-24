@@ -578,8 +578,15 @@ var/list/datum/bioEffect/mutini_effects = list()
 			 [owner ? "\ref[owner] [owner.name]" : "*NULL*"]. (filteredGood.len = [filteredGood.len],
 			  filteredBad.len = [filteredBad.len])"})
 			return
+
+		// some weighted distribution for gene quality,
+		// players get a chance for better genes, monkeys get a chance for worse genes.
 		var/isNPC = (!owner || (!owner.client && (isnpc(owner) || isnpcmonkey(owner))))
-		for(var/g=0, g<(isNPC ? 3 : 5), g++)
+		// There is surely not a chance in hell that converting from string to int is the correct way to do this,
+		// but it doesn't seem to like using ints as keys.
+		var quant = weighted_pick(list("7" = 10, "6" = 35, "5" = 50, "4" = 5))
+
+		for(var/g=0, g<(isNPC ? 10 - text2num(quant) : text2num(quant)), g++)
 			var/datum/bioEffect/selectedG = weighted_pick(filteredGood)
 			if(selectedG)
 				var/datum/bioEffect/selectedNew = selectedG.GetCopy()
@@ -591,7 +598,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 			else
 				break
 
-		for(var/b=0, b<(isNPC ? 7 : 5), b++)
+		for(var/b=0, b<(isNPC ? text2num(quant) : 10 - text2num(quant)), b++)
 			var/datum/bioEffect/selectedB = weighted_pick(filteredBad)
 			if(selectedB)
 				var/datum/bioEffect/selectedNew = selectedB.GetCopy()
