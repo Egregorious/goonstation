@@ -196,7 +196,7 @@
 			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_DONE)
 				if(genResearch.isResearched(/datum/geneticsResearchEntry/sampler) && world.time >= src.equipment[GENETICS_INJECTORS])
 					if (genResearch.researchMaterial >= genResearch.sampler_cost)
-					return 1
+						return 1
 		if("saver")
 			if(E && GBE?.research_level >= EFFECT_RESEARCH_DONE)
 				if (genResearch.isResearched(/datum/geneticsResearchEntry/saver) && length(src.saved_mutations) < genResearch.max_save_slots)
