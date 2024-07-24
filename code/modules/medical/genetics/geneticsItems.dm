@@ -129,14 +129,14 @@ ADMIN_INTERACT_PROCS(/obj/item/genetics_injector/dna_injector, proc/admin_comman
 						src.expended_properly = 1
 						BE.can_make_injector = 0
 						// update the subject's medical record
-						// Need to find a better way to identify the subject's records that doesn't change due to holding an ID card
-						var/datum/db_record/record = data_core.medical.find_record("name", target.name)
-						if (record)
-							var/datum/computer/file/genetics_scan/scan = record["dnasample"]
-							for (var/datum/bioEffect/RBE in scan.dna_pool)
-								if(RBE && RBE.id == gene_to_sample)
-									RBE.can_make_injector = 0
-									break
+						var/datum/db_record/record = data_core.medical.find_record("name", target.bioHolder.ownerName)
+						if (!record)
+							continue
+						var/datum/computer/file/genetics_scan/scan = record["dnasample"]
+						for (var/datum/bioEffect/RBE in scan.dna_pool)
+							if(RBE && RBE.id == gene_to_sample)
+								RBE.can_make_injector = 0
+								break
 					break
 
 			src.uses--
