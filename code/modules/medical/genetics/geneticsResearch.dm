@@ -477,13 +477,16 @@ var/datum/geneticsResearchManager/genResearch = new()
 		var/datum/bioEffect/scannedBE = new BE.type(scan)
 		// copy necessary information
 		// currently only name, for chromosome presence
+		// and can_make_injector, for genes that have been exhausted
 		scannedBE.name = BE.name
+		scannedBE.can_make_injector = BE.can_make_injector
 		scan.dna_active += scannedBE
 	for (var/bioEffectId in L.bioHolder.effectPool)
 		var/datum/bioEffect/BE = L.bioHolder.GetEffectFromPool(bioEffectId)
 		var/datum/bioEffect/scannedBE = new BE.type(scan)
 		scannedBE.dnaBlocks.blockList = BE.dnaBlocks.blockList
 		scannedBE.dnaBlocks.blockListCurr = BE.dnaBlocks.blockListCurr
+		scannedBE.can_make_injector = BE.can_make_injector
 		scan.dna_pool += scannedBE
 
 	return scan

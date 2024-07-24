@@ -350,14 +350,14 @@
 		GP.generate_known_unknown()
 	data += "<b class='notice'>Potential Genetic Effects:</b>"
 	for (var/datum/bioEffect/BE in GP.poolDnaKnown)
-		data += BE.name
+		data += "[BE.name][BE.can_make_injector ? "" : "*"]"
 	if (length(GP.poolDnaUnknown))
 		data += SPAN_ALERT("Unknown: [length(GP.poolDnaUnknown)]")
 	else if (!length(GP.poolDnaKnown))
 		data += "-- None --"
 	data += "<b class='notice'>Active Genetic Effects:</b>"
 	for (var/datum/bioEffect/BE in GP.activeDnaKnown)
-		data += BE.name
+		data += "[BE.name][BE.can_make_injector ? "" : "*"]"
 	if (length(GP.activeDnaUnknown))
 		data += SPAN_ALERT("Unknown: [length(GP.activeDnaUnknown)]")
 	else if (!length(GP.activeDnaKnown))
