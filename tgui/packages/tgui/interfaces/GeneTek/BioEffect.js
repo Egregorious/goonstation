@@ -175,7 +175,7 @@ export const BioEffect = (props, context) => {
       )}
       {research >= 2 && samplerCost >= 0 && haveDevice(equipmentCooldown, "Injectors") && (
         <Button
-          disabled={onCooldown(equipmentCooldown, "Injectors")}
+          disabled={onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
           icon="syringe"
           color="green"
           onClick={() => act("sampler", { ref })}>
