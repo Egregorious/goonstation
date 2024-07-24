@@ -190,11 +190,12 @@
 			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_DONE)
 				if(world.time >= src.equipment[GENETICS_INJECTORS])
 					return 1
-		if("sampler") // sampler
+		if("sampler")
 			if(genResearch.researchMaterial < genResearch.sampler_cost)
 				return 0
 			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_DONE)
 				if(genResearch.isResearched(/datum/geneticsResearchEntry/sampler) && world.time >= src.equipment[GENETICS_INJECTORS])
+					if (genResearch.researchMaterial >= genResearch.sampler_cost)
 					return 1
 		if("saver")
 			if(E && GBE?.research_level >= EFFECT_RESEARCH_DONE)
