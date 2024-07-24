@@ -50,6 +50,7 @@ export const BioEffect = (props, context) => {
     subject,
     boothCost,
     injectorCost,
+    samplerCost,
     precisionEmitter,
     toSplice,
   } = data;
@@ -172,6 +173,15 @@ export const BioEffect = (props, context) => {
           Activator
         </Button>
       )}
+      {research >= 2 && samplerCost >= 0 && haveDevice(equipmentCooldown, "Injectors") && (
+        <Button
+          disabled={onCooldown(equipmentCooldown, "Injectors")}
+          icon="syringe"
+          color="green"
+          onClick={() => act("sampler", { ref })}>
+          Sampler
+        </Button>
+      )}
       {research >= 2 && injectorCost >= 0 && (activeOrStorage) && (
         <Button
           disabled={!canInject || onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
@@ -268,7 +278,10 @@ export const BioEffect = (props, context) => {
                 icon="person-booth"
                 color="good"
                 disabled={boothCost > materialCur}
-                onClick={() => act("booth", booth)}>
+                onClick={() => {
+                  act("booth", booth);
+                  setBooth(null);
+                }}>
                 Send to Booth
               </Button>
             </Box>
