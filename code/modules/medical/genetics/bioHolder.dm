@@ -605,8 +605,8 @@ var/list/datum/bioEffect/mutini_effects = list()
 			 [owner ? "\ref[owner] [owner.name]" : "*NULL*"]. (filteredGood.len = [filteredGood.len],
 			  filteredBad.len = [filteredBad.len])"})
 			return
-
-		for(var/g=0, g<good_genes, g++)
+		var/isNPC = (!owner || (!owner.client && (isnpc(owner) || isnpcmonkey(owner))))
+		for(var/g=0, g<(isNPC ? 3 : 5), g++)
 			var/datum/bioEffect/selectedG = weighted_pick(filteredGood)
 			if(selectedG)
 				selectedNew = selectedG.GetCopy()
@@ -618,7 +618,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 			else
 				break
 
-		for(var/b=0, b<bad_genes, b++)
+		for(var/b=0, b<(isNPC ? 7 : 5), b++)
 			var/datum/bioEffect/selectedB = weighted_pick(filteredBad)
 			if(selectedB)
 				selectedNew = selectedB.GetCopy()
