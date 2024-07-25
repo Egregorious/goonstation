@@ -377,7 +377,7 @@
 			if (GBE.research_level < EFFECT_RESEARCH_DONE)
 				src.log_maybe_cheater(usr, "tried to create a [E.id] activator on an unresearched gene (href spoofing?)")
 				return
-			if (!E.can_make_injector)
+			if (!GBE.can_make_injector)
 				src.log_maybe_cheater(usr, "tried to create a [E.id] activator (non-injectable gene)")
 				return
 			if (!bioEffect_sanity_check(E, 0) && src.equipment_available("activator", E))
@@ -393,6 +393,9 @@
 			var/datum/bioEffect/GBE = E.get_global_instance()
 			if (GBE.research_level < EFFECT_RESEARCH_DONE)
 				src.log_maybe_cheater(usr, "tried to create a [E.id] sampler on an unresearched gene (href spoofing?)")
+				return
+			if (!GBE.can_make_injector)
+				src.log_maybe_cheater(usr, "tried to create a [E.id] sampler (non-injectable gene)")
 				return
 			if (!bioEffect_sanity_check(E, 0) && src.equipment_available("sampler", E))
 				src.equipment_cooldown(GENETICS_INJECTORS, 200)
