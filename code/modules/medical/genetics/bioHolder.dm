@@ -739,7 +739,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 
 		age += (toCopy.age - age) / (11 - progress)
 
-	proc/AddEffect(var/idToAdd, var/power = 0, var/timeleft = 0, var/do_stability = 1, var/magical = 0, var/safety = 0, var/for_scanning=0, var/set_innate = FALSE)
+	proc/AddEffect(var/idToAdd, var/power = 0, var/timeleft = 0, var/do_stability = 1, var/magical = 0, var/safety = 0, var/scannable=0, var/innate = FALSE)
 		//Adds an effect to this holder. Returns the newly created effect if succesful else 0.
 		if(issilicon(src.owner))
 			return 0
@@ -797,7 +797,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 				src.genetic_stability = max(0,src.genetic_stability)
 
 			// set the innateness if applicable. This is mostly just for GeneTek aesthetics, since stability is dealt with already.
-			if (set_innate) newEffect.innate_potential = 1
+			if (innate) newEffect.innate_potential = 1
 
 			if(owner)
 				OutputGainOrLoseMsg(newEffect, TRUE)
