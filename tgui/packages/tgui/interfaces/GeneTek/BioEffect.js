@@ -268,7 +268,10 @@ export const BioEffect = (props, context) => {
                 icon="person-booth"
                 color="good"
                 disabled={boothCost > materialCur}
-                onClick={() => act("booth", booth)}>
+                onClick={() => {
+                  act("booth", booth);
+                  setBooth(null);
+                }}>
                 Send to Booth
               </Button>
             </Box>
