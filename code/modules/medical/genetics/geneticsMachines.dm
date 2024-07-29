@@ -158,7 +158,7 @@
 					if (genResearch.researchMaterial >= genResearch.injector_cost)
 						return 1
 		if("genebooth")
-			if(genResearch.researchMaterial < genResearch.genebooth_cost || ! !!E?.can_make_injector)
+			if(genResearch.researchMaterial < genResearch.genebooth_cost || !E?.can_make_injector)
 				return 0
 			if(E?.can_make_injector && GBE?.research_level >= EFFECT_RESEARCH_IN_PROGRESS)
 				if(genResearch.isResearched(/datum/geneticsResearchEntry/genebooth))
