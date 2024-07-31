@@ -79,6 +79,136 @@ export const BioEffect = (props, context) => {
   const dnaGoodExceptLocks = dna.every(pair =>
     !pair.style || pair.marker === "locked");
   let activeOrStorage = isActive || isStorage; // haha, what a dumb way to reduce arrow function complexity
+
+  const renderActionButtons = () => (
+    <Box textAlign="right">
+      <Box
+        mr={1}
+        style={{ "float": "left" }}>
+        <Icon
+          color={research >= 3 ? "good" : research >= 2 ? "teal" : research >= 1 ? "average" : "bad"}
+          name={research >= 2 ? "flask" : research >= 1 ? "hourglass" : "times"} />
+        {research >= 2 ? " Researched" : research >= 1 ? " In Progress" : " Not Researched"}
+      </Box>
+      {!isActive && !!canResearch && research === 0 && (
+        <Button
+          icon="flask"
+          disabled={researchCost > materialCur}
+          onClick={() => act("researchmut", {
+            ref: ref,
+            sample: !!isSample,
+          })}
+          color="teal">
+          Research
+        </Button>
+      )}
+      {isPotential && (
+        <Button
+          icon="check"
+          disabled={!dnaGood}
+          onClick={() => act("activate", { ref })}
+          color="blue">
+          Activate
+        </Button>
+      )}
+      {research >= 3 && !dnaGood && (
+        <Button
+          icon="magic"
+          disabled={dnaGoodExceptLocks}
+          onClick={() => act("autocomplete", { ref })}>
+          Autocomplete DNA
+        </Button>
+      )}
+      {haveDevice(equipmentCooldown, "Analyzer") && !dnaGood && isPotential && (
+        <Button
+          disabled={onCooldown(equipmentCooldown, "Analyzer")}
+          icon="microscope"
+          color="average"
+          onClick={() => act("analyze", { ref })}>
+          Check Stability
+        </Button>
+      )}
+      {haveDevice(equipmentCooldown, "Reclaimer") && activeOrStorage && !!canReclaim && (
+        <Button
+          disabled={onCooldown(equipmentCooldown, "Reclaimer")}
+          icon="times"
+          color="bad"
+          onClick={() => act("reclaim", { ref })}>
+          Reclaim
+        </Button>
+      )}
+      {boothCost >= 0 && research >= 2 && (activeOrStorage) && (
+        <Button
+          disabled={materialCur < boothCost || !canInject}
+          icon="person-booth"
+          color="good"
+          onClick={() => setBooth({ ref: ref, price: 200, desc: "" })}>
+          Sell at Booth
+        </Button>
+      )}
+      {!!precisionEmitter && research >= 2 && isPotential && !!canScramble && (
+        <Button
+          icon="radiation"
+          disabled={onCooldown(equipmentCooldown, "Emitter") || subject.stat > 0}
+          color="bad"
+          onClick={() => act("precisionemitter", { ref })}>
+          Scramble Gene
+        </Button>
+      )}
+      {saveSlots > 0 && research >= 2 && isActive && (
+        <Button
+          disabled={saveSlots <= savedMutations.length}
+          icon="save"
+          color="average"
+          onClick={() => act("save", { ref })}>
+          Store
+        </Button>
+      )}
+      {research >= 2 && haveDevice(equipmentCooldown, "Injectors") && (
+        <Button
+          disabled={onCooldown(equipmentCooldown, "Injectors")}
+          icon="syringe"
+          onClick={() => act("activator", { ref })}>
+          Activator
+        </Button>
+      )}
+      {research >= 2 && injectorCost >= 0 && (activeOrStorage) && (
+        <Button
+          disabled={!canInject || onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
+          icon="syringe"
+          onClick={() => act("injector", { ref })}
+          color="bad">
+          Injector
+        </Button>
+      )}
+      {(activeOrStorage) && !!toSplice && (
+        <Button
+          disabled={!!spliceError}
+          icon="map-marker-alt"
+          onClick={() => act("splicegene", { ref })}
+          tooltip={spliceError}
+          tooltipPosition="left">
+          Splice
+        </Button>
+      )}
+      {isStorage && subject && (
+        <Button
+          icon="check"
+          onClick={() => act("addstored", { ref })}
+          color="blue">
+          Add to Occupant
+        </Button>
+      )}
+      {isStorage && (
+        <Button
+          icon="trash"
+          onClick={() => act("deletegene", { ref })}
+          color="bad" />
+      )}
+      <Box inline />
+    </Box>
+  );
+
   return (
     <Section
       title={name}
@@ -157,134 +287,7 @@ export const BioEffect = (props, context) => {
         </Modal>
       )}
       <UnlockModal />
-      <Box textAlign="right">
-        <Box
-          mr={1}
-          style={{ "float": "left" }}>
-          <Icon
-            color={research >= 3 ? "good" : research >= 2 ? "teal" : research >= 1 ? "average" : "bad"}
-            name={research >= 2 ? "flask" : research >= 1 ? "hourglass" : "times"} />
-          {research >= 2 ? " Researched" : research >= 1 ? " In Progress" : " Not Researched"}
-        </Box>
-        {!isActive && !!canResearch && research === 0 && (
-          <Button
-            icon="flask"
-            disabled={researchCost > materialCur}
-            onClick={() => act("researchmut", {
-              ref: ref,
-              sample: !!isSample,
-            })}
-            color="teal">
-            Research
-          </Button>
-        )}
-        {isPotential && (
-          <Button
-            icon="check"
-            disabled={!dnaGood}
-            onClick={() => act("activate", { ref })}
-            color="blue">
-            Activate
-          </Button>
-        )}
-        {research >= 3 && !dnaGood && (
-          <Button
-            icon="magic"
-            disabled={dnaGoodExceptLocks}
-            onClick={() => act("autocomplete", { ref })}>
-            Autocomplete DNA
-          </Button>
-        )}
-        {haveDevice(equipmentCooldown, "Analyzer") && !dnaGood && isPotential && (
-          <Button
-            disabled={onCooldown(equipmentCooldown, "Analyzer")}
-            icon="microscope"
-            color="average"
-            onClick={() => act("analyze", { ref })}>
-            Check Stability
-          </Button>
-        )}
-        {haveDevice(equipmentCooldown, "Reclaimer") && activeOrStorage && !!canReclaim && (
-          <Button
-            disabled={onCooldown(equipmentCooldown, "Reclaimer")}
-            icon="times"
-            color="bad"
-            onClick={() => act("reclaim", { ref })}>
-            Reclaim
-          </Button>
-        )}
-        {boothCost >= 0 && research >= 2 && (activeOrStorage) && (
-          <Button
-            disabled={materialCur < boothCost}
-            icon="person-booth"
-            color="good"
-            onClick={() => setBooth({ ref: ref, price: 200, desc: "" })}>
-            Sell at Booth
-          </Button>
-        )}
-        {!!precisionEmitter && research >= 2
-          && isPotential && !!canScramble && (
-          <Button
-            icon="radiation"
-            disabled={onCooldown(equipmentCooldown, "Emitter") || subject.stat > 0}
-            color="bad"
-            onClick={() => act("precisionemitter", { ref })}>
-            Scramble Gene
-          </Button>
-        )}
-        {saveSlots > 0 && research >= 2 && isActive && (
-          <Button
-            disabled={saveSlots <= savedMutations.length}
-            icon="save"
-            color="average"
-            onClick={() => act("save", { ref })}>
-            Store
-          </Button>
-        )}
-        {research >= 2 && !!canInject && haveDevice(equipmentCooldown, "Injectors") && (
-          <Button
-            disabled={onCooldown(equipmentCooldown, "Injectors")}
-            icon="syringe"
-            onClick={() => act("activator", { ref })}>
-            Activator
-          </Button>
-        )}
-        {research >= 2 && !!canInject && injectorCost >= 0
-          && (activeOrStorage) && (
-          <Button
-            disabled={onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
-            icon="syringe"
-            onClick={() => act("injector", { ref })}
-            color="bad">
-            Injector
-          </Button>
-        )}
-        {(activeOrStorage) && !!toSplice && (
-          <Button
-            disabled={!!spliceError}
-            icon="map-marker-alt"
-            onClick={() => act("splicegene", { ref })}
-            tooltip={spliceError}
-            tooltipPosition="left">
-            Splice
-          </Button>
-        )}
-        {isStorage && subject && (
-          <Button
-            icon="check"
-            onClick={() => act("addstored", { ref })}
-            color="blue">
-            Add to Occupant
-          </Button>
-        )}
-        {isStorage && (
-          <Button
-            icon="trash"
-            onClick={() => act("deletegene", { ref })}
-            color="bad" />
-        )}
-        <Box inline />
-      </Box>
+      {renderActionButtons()}
       <Description text={desc} />
       {showSequence && (
         <DNASequence {...props} />
