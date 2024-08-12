@@ -855,7 +855,8 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 		else  ..()
 
 		// create feedback for items which don't produce attack messages
-		if (W && (W.flags & SUPPRESSATTACK))
+		// but not for chemistry containers, because they have their own feedback
+		if (W && (W.flags & (SUPPRESSATTACK | OPENCONTAINER)) == SUPPRESSATTACK)
 			if (src.reagents.is_full())
 				boutput(user, SPAN_ALERT("[src] is already full."))
 			else
