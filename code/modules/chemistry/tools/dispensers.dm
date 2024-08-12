@@ -94,6 +94,27 @@
 			playsound(src.loc, 'sound/items/Screwdriver.ogg', 50, 1)
 			src.anchored = UNANCHORED
 
+	// brain check stolen from the reclaimer
+	proc/brain_check(var/obj/item/I, var/mob/user, var/ask)
+		if (!istype(I))
+			return
+		var/obj/item/organ/brain/brain = null
+		if (istype(I, /obj/item/parts/robot_parts/head))
+			var/obj/item/parts/robot_parts/head/head = I
+			brain = head.brain
+		else if (istype(I, /obj/item/organ/brain))
+			brain = I
+
+		if (brain)
+			if (!ask)
+				boutput(user, SPAN_ALERT("[I] turned the intelligence detection light on! You decide to not load it for now."))
+				return FALSE
+			var/accept = tgui_alert(user, "Possible intelligence detected. Are you sure you want to reclaim [I]?", "Incinerate brain?", list("Yes", "No")) == "Yes" && can_reach(user, src) && user.equipped() == I
+			if (accept)
+				logTheThing(LOG_COMBAT, user, "loads [brain] (owner's ckey [brain.owner ? brain.owner.ckey : null]) into a portable reclaimer.")
+			return accept
+		return TRUE
+
 /* =================================================== */
 /* -------------------- Sub-Types -------------------- */
 /* =================================================== */
@@ -697,6 +718,11 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 	amount_per_transfer_from_this = 25
 	event_handler_flags = NO_MOUSEDROP_QOL
 
+	var/active = FALSE
+	var/stopping = FALSE
+
+	var/sound/sound_brew = sound('sound/effects/bubbles_short.ogg')
+
 	// returns whether the inserted item was brewed
 	proc/brew(var/obj/item/W as obj)
 		if (!istype(W))
@@ -722,32 +748,115 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 		else
 			src.reagents.add_reagent(brew_result, brew_amount)
 
-		src.visible_message(SPAN_NOTICE("[src] brews up [W]!"))
+		//src.visible_message(SPAN_NOTICE("[src] brews up [W]!"))
 		return TRUE
+
+	proc/fermentation_process()
+		// Do nothing for a while; fermentation needs a little time to build up
+		for (var/i = 1; i <= 100; i++)
+		{
+			sleep(2)
+			if (stopping)
+			{
+				active = FALSE
+				stopping = FALSE
+				return
+			}
+		}
+		src.visible_message(SPAN_NOTICE("[src] bubbles and lets off a yeasty smell!"))
+
+		// Brew up to 20 items immediately
+		for (var/i = min(20, src.contents.len); i >= 1; i--)
+		{
+			if (src.reagents.is_full())
+				break
+			if (src.brew(src.contents[i]))
+				qdel(src.contents[i])
+			if (stopping)
+			{
+				active = FALSE
+				stopping = FALSE
+				return
+			}
+		}
+		playsound(src.loc, sound_brew, 30, 1)
+
+		// Brew remaining items one by one until finished or full
+		for (var/i = src.contents.len; i >= 1; i--)
+		{
+			if (src.reagents.is_full())
+				break
+			sleep(5)
+			if (src.brew(src.contents[i]))
+				qdel(src.contents[i])
+			if (i % 2 == 0)
+				playsound(src.loc, sound_brew, 30, 1)
+			if (stopping)
+			{
+				active = FALSE
+				stopping = FALSE
+				return
+			}
+		}
+		active = FALSE
+		stopping = FALSE
+		if (src.reagents.is_full())
+			src.visible_message(SPAN_NOTICE("[src] has reached capacity, the fermentation ceases!"))
+		else
+			src.visible_message(SPAN_NOTICE("[src] finishes brewing up its contents!"))
+
+
+
+
+	attack_hand(var/mob/user)
+		if(active)
+			if (stopping)
+				boutput(user, SPAN_NOTICE("The fermentation process is already stopping."))
+			else
+				stopping = TRUE
+				user.visible_message(SPAN_NOTICE("[user] opens [src]'s valves, stopping fermentation!"))
+			return
+		if (length(src.contents) < 1)
+			boutput(user, SPAN_ALERT("There's nothing inside to ferment."))
+			return
+		user.visible_message(SPAN_NOTICE("[user] closes [src]'s valves, the contents will soon start to ferment!"))
+		active = TRUE
+		fermentation_process()
+
+
+	// wholly stollen from the reclaimer
+	proc/load_still(obj/item/W as obj, mob/user as mob)
+		. = FALSE
+		if (!W.brew_result)
+			return FALSE
+		if (brain_check(W, user, TRUE))
+			if (W.stored)
+				W.stored.transfer_stored_item(W, src, user = user)
+			else
+				W.set_loc(src)
+				if (user) user.u_equip(W)
+			W.dropped(user)
+			. = TRUE
 
 	attackby(obj/item/W, mob/user)
 		if(istool(W, TOOL_SCREWING | TOOL_WRENCHING))
 			bolt_unbolt(user)
 			return
 
-		var/isfull = src.reagents.is_full()
-		if (W && W.brew_result && !isfull)
-			var/load = 0
-			if (src.brew(W))
-				load = 1
-			else
-				load = 0
+		if (W?.cant_drop)
+			boutput(user, SPAN_ALERT("You can't put that in [src] when it's attached to you!"))
+			return ..()
 
-			if (load)
-				user.u_equip(W)
-				W.dropped(user)
-				qdel(W)
-				playsound(src.loc, 'sound/effects/bubbles_short.ogg', 30, 1)
-				return
-			else  ..()
+		if (!active && load_still(W, user))
+			boutput(user, "You load [W] into [src].")
+			playsound(src, sound_brew, 30, TRUE)
+			logTheThing(LOG_STATION, user, "loads [W] into \the [src] at [log_loc(src)].")
+			return
+		else  ..()
+
 		// create feedback for items which don't produce attack messages
 		if (W && (W.flags & SUPPRESSATTACK))
-			if (isfull)
+			if (src.reagents.is_full())
 				boutput(user, SPAN_ALERT("[src] is already full."))
 			else
 				boutput(user, SPAN_ALERT("Can't brew anything from [W]."))
@@ -773,12 +882,11 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 				if (src.reagents.is_full())
 					boutput(user, SPAN_ALERT("[src] is full!"))
 					break
-				if (src.brew(P))
+				if (load_still(P, user))
 					amtload++
-					qdel(P)
 			if (amtload)
 				boutput(user, SPAN_NOTICE("Charged [src] with [amtload] items from [O]!"))
-				playsound(src.loc, 'sound/effects/bubbles_short.ogg', 40, 1)
+				playsound(src.loc, sound_brew, 40, 1)
 			else
 				boutput(user, SPAN_ALERT("Nothing was put into [src]!"))
 		// loading from the ground
@@ -786,6 +894,8 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			var/obj/item/item = O
 			if (!item.brew_result)
 				return ..()
+			if (active)
+				boutput(user, SPAN_ALERT("[src] is currently fermenting."))
 			// "charging" is for sure correct terminology, I'm an expert because I asked chatgpt AND read the first result on google. Mhm mhm.
 			user.visible_message(SPAN_NOTICE("[user] begins quickly charging [src] with [O]!"))
 
@@ -797,9 +907,8 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 					break
 				if (user.loc != staystill) break
 				if (P.type != itemtype) continue
-				if (src.brew(P))
-					qdel(P)
-					playsound(src.loc, 'sound/effects/bubbles_short.ogg', 30, 1)
+				if (load_still(P, user))
+					playsound(src.loc, sound_brew, 30, 1)
 					sleep(0.3 SECONDS)
 			boutput(user, SPAN_NOTICE("You finish charging [src] with [O]!"))
 
