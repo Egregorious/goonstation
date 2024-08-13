@@ -738,22 +738,29 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			var/datum/plantgenes/DNA = P.plantgenes
 			brew_amount = max(HYPfull_potency_calculation(DNA), 5) //always produce SOMETHING
 
+		// keep track of whether a valid reagent was found in the brew results
+		// because we want to avoid distilling into nothing and then deleting the item
+		var/validresult = FALSE
+
 		if (islist(brew_result))
 			for(var/I in brew_result)
 				var/result = I
 				var/amount = brew_result[I]
 				if (!amount)
 					amount = brew_amount
-				src.reagents.add_reagent(result, amount)
-		else
+				if (reagents_cache[result]) // check that the brew_result is a valid reagent first, because add_reagent just causes a crash if it's not
+					src.reagents.add_reagent(result, amount)
+					validresult = TRUE
+		else if (reagents_cache[brew_result])
 			src.reagents.add_reagent(brew_result, brew_amount)
+			validresult = TRUE
 
 		//src.visible_message(SPAN_NOTICE("[src] brews up [W]!"))
-		return TRUE
+		return validresult
 
 	proc/fermentation_process()
 		// Do nothing for a while; fermentation needs a little time to build up
-		for (var/i = 1; i <= 100; i++)
+		for (var/i = 1; i <= 10; i++)
 		{
 			sleep(2)
 			if (stopping)
@@ -763,7 +770,6 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 				return
 			}
 		}
-		src.visible_message(SPAN_NOTICE("[src] bubbles and lets off a yeasty smell!"))
 
 		// Brew up to 20 items immediately
 		for (var/i = min(20, src.contents.len); i >= 1; i--)
@@ -780,7 +786,7 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			}
 		}
 		playsound(src.loc, sound_brew, 30, 1)
-
+		if (src.contents.len >= 1) src.visible_message(SPAN_NOTICE("[src] bubbles and lets off a yeasty smell!"))
 		// Brew remaining items one by one until finished or full
 		for (var/i = src.contents.len; i >= 1; i--)
 		{
@@ -815,16 +821,18 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			else
 				stopping = TRUE
 				user.visible_message(SPAN_NOTICE("[user] opens [src]'s valves, stopping fermentation!"))
+				playsound(src.loc, 'sound/effects/valve_creak.ogg', 20, 0, 0, 1.1)
 			return
 		if (length(src.contents) < 1)
 			boutput(user, SPAN_ALERT("There's nothing inside to ferment."))
 			return
 		user.visible_message(SPAN_NOTICE("[user] closes [src]'s valves, the contents will soon start to ferment!"))
+		playsound(src.loc, 'sound/effects/valve_creak.ogg', 20, 0, 0, 2)
 		active = TRUE
 		fermentation_process()
 
 
-	// wholly stollen from the reclaimer
+	// wholly stolen from the reclaimer
 	proc/load_still(obj/item/W as obj, mob/user as mob)
 		. = FALSE
 		if (!W.brew_result)
@@ -852,7 +860,6 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			playsound(src, sound_brew, 30, TRUE)
 			logTheThing(LOG_STATION, user, "loads [W] into \the [src] at [log_loc(src)].")
 			return
-		else  ..()
 
 		// create feedback for items which don't produce attack messages
 		// but not for chemistry containers, because they have their own feedback
@@ -915,6 +922,21 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 
 		else
 			return ..()
+
+	verb/Eject_Items()
+		set name = "Remove Items"
+		set src in oview(1)
+		set category = "Local"
+		if (src.contents.len < 1)
+			boutput(usr, SPAN_NOTICE("There are no items in [src]."))
+		else
+			usr.visible_message(SPAN_NOTICE("[usr] empties items from [src]!"))
+			for (var/i = src.contents.len; i >= 1; i--)
+			{
+				src.contents[i].loc = src.loc
+			}
+
+
 
 /* ==================================================== */
 /* --------------- Water Cooler Bottle ---------------- */
