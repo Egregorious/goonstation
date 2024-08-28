@@ -111,7 +111,7 @@
 				return FALSE
 			var/accept = tgui_alert(user, "Possible intelligence detected. Are you sure you want to reclaim [I]?", "Incinerate brain?", list("Yes", "No")) == "Yes" && can_reach(user, src) && user.equipped() == I
 			if (accept)
-				logTheThing(LOG_COMBAT, user, "loads [brain] (owner's ckey [brain.owner ? brain.owner.ckey : null]) into a portable reclaimer.")
+				logTheThing(LOG_COMBAT, user, "loads [brain] (owner's ckey [brain.owner ? brain.owner.ckey : null]) into a still.")
 			return accept
 		return TRUE
 
@@ -720,98 +720,155 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 
 	var/active = FALSE
 	var/stopping = FALSE
+	// If true, temperature functionality gets turned on. I can't figure out how to get atmos to work on the still,
+	// and this stuff doesn't really work nicely gameplay-wise if the still doesn't return to room-temp naturally.
+	// So, here's an on/off switch.
+	var/temp_function = TRUE
+
+	// the base number of seconds it takes for fermentation to build up at room temperature
+	var/ferment_buildup = 20
+	/// the base number of 1/10 seconds between items brewing, at room temperature
+	var/ferment_pause = 5
+	/// the number of items that will be brewed instantly after the fermentation build up
+	var/initial_brew_total = 20
+
+	// the time multiplier at 0C, starting at room temp
+	var/freezing_multiplier = 8
+	// the time multiplier at the 'perfect' temperature, starting at room temp
+	var/perfect_temp_multiplier = 0.3
+	// the minimum temperature at which fermentation is the fastest
+	var/perfect_temp = 333
+
+
 
 	var/sound/sound_brew = sound('sound/effects/bubbles_short.ogg')
+	var/sound/sound_load = sound('sound/items/Deconstruct.ogg')
 
 	// returns whether the inserted item was brewed
 	proc/brew(var/obj/item/W as obj)
 		if (!istype(W))
 			return FALSE
 		var/list/brew_result = W.brew_result
-		var/list/brew_amount = 20 // how much brew could a brewstill brew if a brewstill still brewed brew?
+		var/list/brew_amount = 10 // how much brew could a brewstill brew if a brewstill still brewed brew?
 
 		if (!brew_result)
 			return FALSE
 
-		if(istype(W, /obj/item/reagent_containers/food/snacks/plant))
-			var/obj/item/reagent_containers/food/snacks/plant/P = W
-			var/datum/plantgenes/DNA = P.plantgenes
-			brew_amount = max(HYPfull_potency_calculation(DNA), 5) //always produce SOMETHING
+		var/potency_amount = potency_amount(W)
 
 		// keep track of whether a valid reagent was found in the brew results
-		// because we want to avoid distilling into nothing and then deleting the item
+		// because we want to avoid distilling into nothing and then deleting the item anyway
 		var/validresult = FALSE
 
 		if (islist(brew_result))
+			// we need the total base amounts first so we can divvy up the potency-additions fractionally
+			var/total_value = 0
+			for (var/key in brew_result)
+				var/value = brew_result[key]
+				if (isnum(value)) total_value += value
+				else total_value += brew_amount
 			for(var/I in brew_result)
 				var/result = I
 				var/amount = brew_result[I]
 				if (!amount)
 					amount = brew_amount
-				if (reagents_cache[result]) // check that the brew_result is a valid reagent first, because add_reagent just causes a crash if it's not
-					src.reagents.add_reagent(result, amount)
+				if (result != TRUE && reagents_cache[result]) // check that brew_result is a valid reagent first, because add_reagent just causes a crash if it's not
+					src.reagents.add_reagent(result, round(amount + (potency_amount * (total_value / amount)), 1))
 					validresult = TRUE
-		else if (reagents_cache[brew_result])
-			src.reagents.add_reagent(brew_result, brew_amount)
+		// I don't understand why, but if brew_result is explicitly true it causes add_reagent to crash.
+		// I would have expected it to either not be a valid key or for add_reagent to just find aluminium, but...
+		else if (brew_result != TRUE && reagents_cache[brew_result])
+			src.reagents.add_reagent(brew_result, brew_amount + potency_amount)
 			validresult = TRUE
 
 		//src.visible_message(SPAN_NOTICE("[src] brews up [W]!"))
 		return validresult
 
+	proc/potency_amount(var/obj/item/W)
+		if(istype(W, /obj/item/reagent_containers/food/snacks/plant))
+			var/obj/item/reagent_containers/food/snacks/plant/Plant = W
+			return HYPfull_potency_calculation(Plant.plantgenes)
+		return 0
+
 	proc/fermentation_process()
 		// Do nothing for a while; fermentation needs a little time to build up
-		for (var/i = 1; i <= 10; i++)
+		for (var/i = 1; i <= (ferment_buildup * 5); i++)
 		{
-			sleep(2)
+			sleep(2 * temp_multiplier())
 			if (stopping)
 			{
-				active = FALSE
-				stopping = FALSE
+				stop_fermentation()
 				return
 			}
+			if (temp_function && src.reagents.total_temperature <= T0C)
+				stop_fermentation()
+				src.visible_message(SPAN_ALERT("[src]'s fermentation stalls due to suboptimal temperatures."))
+				return
 		}
-
-		// Brew up to 20 items immediately
-		for (var/i = min(20, src.contents.len); i >= 1; i--)
+		if (stopping)
+		{
+			stop_fermentation()
+			return
+		}
+		var/list/unfermentables = list()
+		// Brew a number of items immediately
+		for (var/i = min(initial_brew_total, src.contents.len); i >= 1; i--)
 		{
 			if (src.reagents.is_full())
 				break
-			if (src.brew(src.contents[i]))
+			if ((temp_function && src.reagents.total_temperature >= T100C) || src.brew(src.contents[i]))
 				qdel(src.contents[i])
-			if (stopping)
-			{
-				active = FALSE
-				stopping = FALSE
-				return
-			}
+			else
+				unfermentables.Add(src.contents[i])
 		}
 		playsound(src.loc, sound_brew, 30, 1)
-		if (src.contents.len >= 1) src.visible_message(SPAN_NOTICE("[src] bubbles and lets off a yeasty smell!"))
+		if (!(unfermentables.len == src.contents.len) && src.contents.len >= 1) src.visible_message(SPAN_NOTICE("[src] bubbles and lets off a yeasty smell!"))
 		// Brew remaining items one by one until finished or full
 		for (var/i = src.contents.len; i >= 1; i--)
 		{
-			if (src.reagents.is_full())
-				break
-			sleep(5)
-			if (src.brew(src.contents[i]))
-				qdel(src.contents[i])
-			if (i % 2 == 0)
-				playsound(src.loc, sound_brew, 30, 1)
+			sleep(ferment_pause * temp_multiplier())
 			if (stopping)
 			{
-				active = FALSE
-				stopping = FALSE
+				stop_fermentation()
 				return
 			}
+			if (temp_function && src.reagents.total_temperature <= T0C)
+				stop_fermentation()
+				src.visible_message(SPAN_ALERT("[src]'s fermentation stalls due to suboptimal temperatures."))
+				return
+			if ((temp_function && src.reagents.total_temperature >= T100C))
+				qdel(src.contents[i])
+				// play sound only every so often so it isn't too annoying
+				if (i % 4 == 0) playsound(src.loc, sound_brew, 30, 1)
+			else if (src.brew(src.contents[i]))
+				qdel(src.contents[i])
+				if (i % 4 == 0) playsound(src.loc, sound_brew, 30, 1)
+			if (src.reagents.is_full())
+				break
 		}
 		active = FALSE
 		stopping = FALSE
 		if (src.reagents.is_full())
-			src.visible_message(SPAN_NOTICE("[src] has reached capacity, the fermentation ceases!"))
+			src.visible_message(SPAN_ALERT("[src] has reached capacity, the fermentation ceases!"))
 		else
 			src.visible_message(SPAN_NOTICE("[src] finishes brewing up its contents!"))
 
 
+	// Look me ain't maths so good alright, me not understand how to exponentials, me just slap two linear equations together and call it day.
+	proc/temp_multiplier()
+		if (!temp_function) return 1
+		var/temp = min(src.reagents.total_temperature, perfect_temp)
+		if (temp >= 290)
+			var/proportion = (temp - T20C) / (T100C - T20C)
+			return 1 - proportion * (1 - perfect_temp_multiplier)
+		else
+			var/proportion = (temp - T0C) / (T20C - T0C)
+			return freezing_multiplier - proportion * (freezing_multiplier - 1)
+
+	// helper method in the hopes that this will also handle an icon state change at some point
+	proc/stop_fermentation()
+		active = FALSE
+		stopping = FALSE
 
 
 	attack_hand(var/mob/user)
@@ -826,13 +883,19 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 		if (length(src.contents) < 1)
 			boutput(user, SPAN_ALERT("There's nothing inside to ferment."))
 			return
+		if (temp_function && src.reagents.total_temperature <= T0C)
+			boutput(user, SPAN_ALERT("The [src]'s temperature is too low to start fermentation."))
+			return
 		user.visible_message(SPAN_NOTICE("[user] closes [src]'s valves, the contents will soon start to ferment!"))
 		playsound(src.loc, 'sound/effects/valve_creak.ogg', 20, 0, 0, 2)
 		active = TRUE
 		fermentation_process()
 
-
-	// wholly stolen from the reclaimer
+	// We only check truthiness of brew_result here, and the boiling-temp item-deletion bypasses the extra validity check performed during fermentation_process,
+	// this means items with a truthy but non-reagent 'brew_result' will be loadable and won't be deleted during the normal fermentation process, but will
+	// lengthen the brewing time and will be destroyed during the boiling-temp item-deletion check. Potentially, therefore, you can set 'brew_result' to an arbitrary value
+	// and that item will be fermentationally-destructable... it's niche and weird and probably pointless unless you want to turn an item into a brewing red herring,
+	// but I figure I should document it.
 	proc/load_still(obj/item/W as obj, mob/user as mob)
 		. = FALSE
 		if (!W.brew_result)
@@ -850,20 +913,36 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 		if(istool(W, TOOL_SCREWING | TOOL_WRENCHING))
 			bolt_unbolt(user)
 			return
-
-		if (W?.cant_drop)
+		if (active)
+			boutput(user, SPAN_ALERT("Can't put anything into [src] while it's fermenting."))
+			return
+		else if (W.storage || istype(W, /obj/item/satchel))
+			var/items = W
+			if (W.storage)
+				items = W.storage.get_contents()
+			for(var/obj/item/O in items)
+				if (load_still(O, user))
+					. = TRUE
+			if (istype(W, /obj/item/satchel) && .)
+				W.UpdateIcon()
+			//Users loading individual items would make an annoying amount of messages
+			//But loading a container is more noticable and there should be less
+			if (.)
+				user.visible_message("<b>[user]</b> charges [src] with the contents of [W].")
+				playsound(src, sound_load, 40, TRUE)
+				logTheThing(LOG_STATION, user, "loads [W] into \the [src] at [log_loc(src)].")
+		else if (W?.cant_drop)
 			boutput(user, SPAN_ALERT("You can't put that in [src] when it's attached to you!"))
-			return ..()
-
-		if (!active && load_still(W, user))
+			return
+		else if (load_still(W, user))
 			boutput(user, "You load [W] into [src].")
-			playsound(src, sound_brew, 30, TRUE)
+			playsound(src, sound_load, 30, TRUE)
 			logTheThing(LOG_STATION, user, "loads [W] into \the [src] at [log_loc(src)].")
 			return
 
 		// create feedback for items which don't produce attack messages
 		// but not for chemistry containers, because they have their own feedback
-		if (W && (W.flags & (SUPPRESSATTACK | OPENCONTAINER)) == SUPPRESSATTACK)
+		else if (W && (W.flags & (SUPPRESSATTACK | OPENCONTAINER)) == SUPPRESSATTACK)
 			if (src.reagents.is_full())
 				boutput(user, SPAN_ALERT("[src] is already full."))
 			else
@@ -884,17 +963,17 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 			return
 		// loading from crate
 		if (istype(O, /obj/storage/crate/))
+			if (active)
+				boutput(user, SPAN_ALERT("[src] is currently fermenting."))
+				return
 			user.visible_message(SPAN_NOTICE("[user] charges [src] with [O]'s contents!"))
 			var/amtload = 0
 			for (var/obj/item/Produce in O.contents)
-				if (src.reagents.is_full())
-					boutput(user, SPAN_ALERT("[src] is full!"))
-					break
 				if (load_still(Produce, user))
 					amtload++
 			if (amtload)
 				boutput(user, SPAN_NOTICE("Charged [src] with [amtload] items from [O]!"))
-				playsound(src.loc, sound_brew, 40, 1)
+				playsound(src.loc, sound_load, 40, 1)
 			else
 				boutput(user, SPAN_ALERT("Nothing was put into [src]!"))
 		// loading from the ground
@@ -904,6 +983,7 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 				return ..()
 			if (active)
 				boutput(user, SPAN_ALERT("[src] is currently fermenting."))
+				return
 			// "charging" is for sure correct terminology, I'm an expert because I asked chatgpt AND read the first result on google. Mhm mhm.
 			user.visible_message(SPAN_NOTICE("[user] begins quickly charging [src] with [O]!"))
 
@@ -927,14 +1007,24 @@ TYPEINFO(/obj/reagent_dispensers/watertank/fountain)
 		set name = "Remove Items"
 		set src in oview(1)
 		set category = "Local"
+		if (active)
+			boutput(usr, SPAN_NOTICE("Cannot remove items from [src] while fermentation is active."))
+			return
 		if (src.contents.len < 1)
-			boutput(usr, SPAN_NOTICE("There are no items in [src]."))
-		else
-			usr.visible_message(SPAN_NOTICE("[usr] empties items from [src]!"))
-			for (var/i = src.contents.len; i >= 1; i--)
-			{
-				src.contents[i].loc = src.loc
-			}
+			boutput(usr, SPAN_NOTICE("There are no items in [src] to remove."))
+			return
+		usr.visible_message(SPAN_NOTICE("[usr] empties items from [src]!"))
+		for (var/i = src.contents.len; i >= 1; i--)
+		{
+			src.contents[i].loc = src.loc
+		}
+
+	// Can't seem to make the still itself add to the composite heat capacity of the reagents,
+	// so I guess modifying the exposed heat capacity is a slap-dash way to lower the rate of temp change.
+	// Ideally I suppose the still would have it's own temperature.
+	temperature_expose(datum/gas_mixture/air, exposed_temperature, exposed_volume, cannot_be_cooled = FALSE)
+		/obj::temperature_expose()
+		reagents.temperature_reagents(exposed_temperature, exposed_volume, 10)
 
 
 
