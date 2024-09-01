@@ -279,7 +279,8 @@ TYPEINFO_NEW(/obj/table)
 		else if (istype(W, /obj/item/cloth/towel))
 			user.visible_message(SPAN_NOTICE("[user] wipes down [src] with [W]."))
 
-		else if (istype(W) && src.place_on(W, user, params))
+		if (!islist(params)) params = params2list(params)
+		else if (istype(W) && src.place_on(W, user, params, params["dragged"]))//
 			return
 		// chance to smack satchels against a table when dumping stuff out of them, because that can be kinda funny
 		else if (istype(W, /obj/item/satchel) && (user.get_brain_damage() <= 40 && rand(1, 10) < 10))
@@ -332,7 +333,7 @@ TYPEINFO_NEW(/obj/table)
 			return TRUE
 		return FALSE
 
-	MouseDrop_T(atom/O, mob/user as mob)
+	MouseDrop_T(atom/O, mob/user as mob, src_location, over_location, over_control, src_control, params)
 		if (!in_interact_range(user, src) || !in_interact_range(user, O) || user.restrained() || user.getStatusDuration("unconscious") || user.sleeping || user.stat || user.lying)
 			return
 
@@ -358,12 +359,10 @@ TYPEINFO_NEW(/obj/table)
 				S.tooltip_rebuild = 1
 				S.UpdateIcon()
 				return
+
 		if (isrobot(user) || user.equipped() != I || (I.cant_drop || I.cant_self_remove))
 			return
-		user.drop_item()
-		if (I.loc != src.loc)
-			step(I, get_dir(I, src))
-		return
+		src.place_on(I, user, params, TRUE)
 
 	mouse_drop(atom/over_object, src_location, over_location)
 		if (usr == over_object && src.has_drawer && src.drawer_locked)
