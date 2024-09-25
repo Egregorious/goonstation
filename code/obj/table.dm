@@ -285,6 +285,9 @@ TYPEINFO_NEW(/obj/table)
 		// chance to smack satchels against a table when dumping stuff out of them, because that can be kinda funny
 		else if (istype(W, /obj/item/satchel) && (user.get_brain_damage() <= 40 && rand(1, 10) < 10))
 			return
+		// chance to smack satchels against a table when dumping stuff out of them, because that can be kinda funny
+		else if (istype(W, /obj/item/satchel) && (user.get_brain_damage() <= 40 && rand(1, 10) < 10))
+			return
 
 		else
 			return ..()
@@ -1203,6 +1206,11 @@ TYPEINFO(/obj/table/glass)
 				random_brute_damage(user, rand(10,30),1)
 				take_bleeding_damage(user, user, rand(10,30))
 
+		if (isliving(user))
+			var/mob/living/dude = user
+			var/datum/gang/gang = dude.get_gang()
+			gang?.do_vandalism(GANG_VANDALISM_TABLING, src.loc)
+
 	hitby(atom/movable/AM, datum/thrown_thing/thr)
 		..()
 		if (ismob(AM))
@@ -1212,6 +1220,10 @@ TYPEINFO(/obj/table/glass)
 				src.visible_message(SPAN_ALERT("[M] smashes through [src]!"))
 				playsound(src, 'sound/impact_sounds/Generic_Hit_Heavy_1.ogg', 50, TRUE)
 				src.smash()
+				if (isliving(thr.thrown_by))
+					var/mob/living/dude = thr.thrown_by
+					var/datum/gang/gang = dude.get_gang()
+					gang?.do_vandalism(GANG_VANDALISM_TABLING, src.loc)
 				if (M.loc != src.loc)
 					step(M, get_dir(M, src))
 				if (ishuman(M))
