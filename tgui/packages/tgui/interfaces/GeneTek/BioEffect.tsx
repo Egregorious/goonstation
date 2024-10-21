@@ -82,6 +82,7 @@ export const BioEffect = (props) => {
     research,
     canResearch,
     canInject,
+    innate_potential,
     canScramble,
     canReclaim,
     spliceError,
@@ -97,13 +98,30 @@ export const BioEffect = (props) => {
   // helper methods just to reduce arrow function complexity.
   const SamplerButton = () => {
     return (
-    <Button
-            disabled={onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
-              icon="syringe"
-              color="green"
-              onClick={() => act("sampler", { ref })}>
-              Sampler
-    </Button>
+      <Button
+        disabled={!canInject || onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
+        icon="syringe"
+        color="green"
+        onClick={() => act("sampler", { ref })}>
+        Sampler{samplerCost}
+      </Button>
+    );
+  };
+  const InjectorButton = () => {
+    return (
+      <Button
+        disabled={
+          research < 3 ||
+          !canInject ||
+          onCooldown(equipmentCooldown, 'Injectors') ||
+          materialCur < injectorCost
+        }
+        icon="syringe"
+        onClick={() => act('injector', { ref })}
+        color="bad"
+      >
+        Injector
+      </Button>
     );
   };
 
@@ -203,7 +221,7 @@ export const BioEffect = (props) => {
           )}
           {boothCost >= 0 && research >= 2 && activeOrStorage && (
             <Button
-              disabled={materialCur < boothCost || !canInject}
+              disabled={research < 3 || materialCur < boothCost || !canInject}
               icon="person-booth"
               color="good"
               onClick={() => setBooth({ ref: ref, price: 200, desc: '' })}
@@ -218,26 +236,15 @@ export const BioEffect = (props) => {
                 icon="syringe"
                 onClick={() => act('activator', { ref })}
               >
-                Activator
+                Activator{samplerCost}
               </Button>
             )}
           {research >= 2 &&
             injectorCost >= 0 &&
             activeOrStorage && (
-              <Button
-                disabled={
-                  !canInject ||
-                  onCooldown(equipmentCooldown, 'Injectors') ||
-                  materialCur < injectorCost
-                }
-                icon="syringe"
-                onClick={() => act('injector', { ref })}
-                color="bad"
-              >
-                Injector
-              </Button>
+              InjectorButton()
             )}
-          {research >= 2 && samplerCost >= 0 && haveDevice(equipmentCooldown, "Injectors") && (
+          {research >= 2 && samplerCost >= 0 && (
             SamplerButton()
           )}
           {activeOrStorage && !!toSplice && (
@@ -366,9 +373,6 @@ export const BioEffect = (props) => {
     </Section>
   );
 };
-
-// I don't know React or Javascript much at all but had to reduce arrow point complexity, so this is just a low-skill helper method
-
 
 export const Description = (props, context) => {
   const lines = props.text?.split(/<br ?\/?>/g);
