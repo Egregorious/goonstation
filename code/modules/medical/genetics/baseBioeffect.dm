@@ -55,7 +55,7 @@ ABSTRACT_TYPE(/datum/bioEffect)
 	var/curable_by_mutadone = TRUE //! if 0/FALSE, we cant mutadone this - reinforced, magic genes and anti-toxins use this
 	var/is_magical = FALSE //! only for trait genes/similar, we really dont want to lose this
 	var/stability_loss = 0
-	var/tmp/activated_from_pool = 0
+	var/tmp/innate_potential = 0 // Is this gene considered to have been part of the owner's potential pool?
 	var/altered = 0
 	var/add_delay = 0
 	var/wildcard = 0

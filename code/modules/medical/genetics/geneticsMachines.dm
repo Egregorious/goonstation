@@ -561,7 +561,7 @@
 			subject.bioHolder.RemoveAllEffects(null, TRUE)
 			subject.bioHolder.BuildEffectPool()
 			if (addEffect) // re-mutantify if we would have been able to anyway
-				subject.bioHolder.AddEffect(addEffect)
+				subject.bioHolder.AddEffect(addEffect, , , 0)
 			if (genResearch.emitter_radiation > 0)
 				subject.take_radiation_dose((genResearch.emitter_radiation/75) * 1.5 SIEVERTS)
 			src.equipment_cooldown(GENETICS_EMITTERS, 1200)
@@ -885,7 +885,8 @@
 		"name" = research_level >= EFFECT_RESEARCH_DONE ? BE.name \
 			: "Unknown Mutation",
 		"research" = research_level,
-		"canInject" = BE.can_make_injector // serialising this because every gene wants to display the status
+		"canInject" = BE.can_make_injector, // serialising this because every gene wants to display the status
+		"innate_potential" = BE.innate_potential
 		)
 	// The following items are only applicable for currently selected gene or list of mutations
 	if(full_data)
