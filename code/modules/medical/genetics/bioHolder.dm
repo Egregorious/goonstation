@@ -454,7 +454,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 
 		for (var/datum/bioEffect/curr as anything in src.effects)
 			var/datum/bioEffect/E = src.effects[curr]
-			if (E.activated_from_pool == 1)
+			if (E.innate_potential == 1)
 				DeactivatePoolEffect(E)
 
 		return
@@ -467,7 +467,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 		src.effectPool[E.id] = E
 		E.owner = null
 		E.holder = null
-		E.activated_from_pool = 0
 		E.OnRemove()
 
 		src.OutputGainOrLoseMsg(E, FALSE)
@@ -497,7 +496,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 		effectPool.Remove(E.id)
 		E.owner = owner
 		E.holder = src
-		E.activated_from_pool = 1
 		E.OnAdd()
 
 		OutputGainOrLoseMsg(E, TRUE)
@@ -505,7 +503,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 		mobAppearance.UpdateMob()
 		return E
 
-	proc/AddNewPoolEffect(var/idToAdd, var/scramble=FALSE)
+	proc/AddNewPoolEffect(var/idToAdd, var/scramble=FALSE, var/innate=TRUE)
 		if(HasEffect(idToAdd) || HasEffectInPool(idToAdd))
 			return 0
 
@@ -517,11 +515,12 @@ var/list/datum/bioEffect/mutini_effects = list()
 			if(scramble) newEffect.dnaBlocks.ModBlocks()
 			newEffect.holder = src
 			newEffect.owner = src.owner
+			newEffect.innate_potential = (innate ? 1 : 0)
 			return 1
 
 		return 0
 
-	proc/AddRandomNewPoolEffect()
+	proc/AddRandomNewPoolEffect(var/innate=TRUE)
 		var/list/filteredList = list()
 
 		if (!bioEffectList || !length(bioEffectList))
@@ -547,6 +546,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 		selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 		selectedNew.holder = src
 		selectedNew.owner = src.owner
+		selectedNew.innate_potential = (innate ? 1 : 0)
 		effectPool[selectedNew.id] = selectedNew
 		return 1
 
@@ -613,6 +613,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 				selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 				selectedNew.holder = src
 				selectedNew.owner = src.owner
+				selectedNew.innate_potential = 1
 				effectPool[selectedNew.id] = selectedNew
 				filteredGood.Remove(selectedG)
 			else
@@ -625,6 +626,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 				selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 				selectedNew.holder = src
 				selectedNew.owner = src.owner
+				selectedNew.innate_potential = 1
 				effectPool[selectedNew.id] = selectedNew
 				filteredBad.Remove(selectedB)
 			else
@@ -638,6 +640,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 					selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 					selectedNew.holder = src
 					selectedNew.owner = src.owner
+					selectedNew.innate_potential = 1
 					effectPool[selectedNew.id] = selectedNew
 					filteredSecret.Remove(selectedS)
 				else
@@ -793,6 +796,9 @@ var/list/datum/bioEffect/mutini_effects = list()
 				src.genetic_stability -= newEffect.stability_loss
 				src.genetic_stability = max(0,src.genetic_stability)
 
+			// set the innateness if applicable. This is mostly just for GeneTek aesthetics, since stability is dealt with already.
+			if (set_innate) newEffect.innate_potential = 1
+
 			if(owner)
 				OutputGainOrLoseMsg(newEffect, TRUE)
 
@@ -860,10 +866,10 @@ var/list/datum/bioEffect/mutini_effects = list()
 
 	proc/RemoveEffectInstance(var/datum/bioEffect/effect)
 		effect.OnRemove()
-		if (!effect.activated_from_pool)
+		if (!effect.innate_potential)
 			src.genetic_stability += effect.stability_loss
 			src.genetic_stability = max(0,src.genetic_stability)
-		effect.activated_from_pool = 0 //Fix for bug causing infinitely exploitable stability gain / loss
+		effect.innate_potential = 0 //Fix for bug causing infinitely exploitable stability gain / loss
 
 		if (owner)
 			OutputGainOrLoseMsg(effect, FALSE)

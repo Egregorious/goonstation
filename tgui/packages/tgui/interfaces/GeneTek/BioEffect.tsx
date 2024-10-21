@@ -150,7 +150,7 @@ export const BioEffect = (props) => {
                 icon="person-booth"
                 color="good"
                 disabled={boothCost > materialCur}
-                onClick={() => act('booth', booth)}
+                onClick={() => { act('booth', booth); setBooth(null); }}
               >
                 Send to Booth
               </Button>
@@ -246,32 +246,6 @@ export const BioEffect = (props) => {
               Reclaim
             </Button>
           )}
-        {boothCost >= 0 && research >= 2 && activeOrStorage && (
-          <Button
-            disabled={materialCur < boothCost}
-            icon="person-booth"
-            color="good"
-            onClick={() => setBooth({ ref: ref, price: 200, desc: '' })}
-          >
-            Sell at Booth
-          </Button>
-        )}
-        {!!precisionEmitter &&
-          research >= 2 &&
-          isPotential &&
-          !!canScramble && (
-            <Button
-              icon="radiation"
-              disabled={
-                onCooldown(equipmentCooldown, 'Emitter') ||
-                (subject && subject.stat > 0)
-              }
-              color="bad"
-              onClick={() => act('precisionemitter', { ref })}
-            >
-              Scramble Gene
-            </Button>
-          )}
         {saveSlots > 0 && research >= 2 && isActive && (
           <Button
             disabled={saveSlots <= savedMutations.length}
@@ -282,11 +256,20 @@ export const BioEffect = (props) => {
             Store
           </Button>
         )}
+        {boothCost >= 0 && research >= 2 && activeOrStorage && (
+          <Button
+            disabled={materialCur < boothCost || !canInject}
+            icon="person-booth"
+            color="good"
+            onClick={() => setBooth({ ref: ref, price: 200, desc: '' })}
+          >
+            Sell at Booth
+          </Button>
+        )}
         {research >= 2 &&
-          !!canInject &&
           haveDevice(equipmentCooldown, 'Injectors') && (
             <Button
-              disabled={onCooldown(equipmentCooldown, 'Injectors')}
+              disabled={!canInject || onCooldown(equipmentCooldown, 'Injectors')}
               icon="syringe"
               onClick={() => act('activator', { ref })}
             >
@@ -294,11 +277,11 @@ export const BioEffect = (props) => {
             </Button>
           )}
         {research >= 2 &&
-          !!canInject &&
           injectorCost >= 0 &&
           activeOrStorage && (
             <Button
               disabled={
+                !canInject ||
                 onCooldown(equipmentCooldown, 'Injectors') ||
                 materialCur < injectorCost
               }
@@ -320,6 +303,22 @@ export const BioEffect = (props) => {
             Splice
           </Button>
         )}
+        {!!precisionEmitter &&
+          research >= 2 &&
+          isPotential &&
+          !!canScramble && (
+            <Button
+              icon="radiation"
+              disabled={
+                onCooldown(equipmentCooldown, 'Emitter') ||
+                (subject && subject.stat > 0)
+              }
+              color="bad"
+              onClick={() => act('precisionemitter', { ref })}
+            >
+              Scramble Gene
+            </Button>
+          )}
         {isStorage && subject && (
           <Button
             icon="check"
@@ -381,7 +380,6 @@ export const GeneList = (props) => {
         {genes.map((g) => (
           <Flex.Item key={g.ref} grow={1} textAlign="center">
             <Button
-              icon={researchLevels[g.research].icon}
               color={
                 g.ref === activeGene
                   ? 'black'
@@ -395,7 +393,41 @@ export const GeneList = (props) => {
               }
               tooltipPosition="left"
               width="80%"
-            />
+              style={{
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '20px',
+                border: g.innate_potential ? 'none' : '1px solid #FFBF00',
+                borderRadius: '2px',
+              }}
+              >
+              <Flex align="center" justify="center">
+                <Icon
+                  name={researchLevels[g.research].icon}
+                  color="white"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                />
+                {!g?.canInject &&
+                <Icon
+                  name="circle"
+                  size={0.25}
+                  ml={1}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(55%, -90%)',
+                  }}
+                />}
+              </Flex>
+            </Button>
           </Flex.Item>
         ))}
       </Flex>
