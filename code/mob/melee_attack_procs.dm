@@ -222,7 +222,7 @@
 		else
 			qdel(G)
 
-		src.next_click = world.time + (COMBAT_CLICK_DELAY)
+		src.next_click = world.time + src.combat_click_delay
 
 /mob/living/proc/grab_block() //this is sorta an ugly but fuck it!!!!
 	if (src.grabbed_by && length(src.grabbed_by) > 0)
@@ -245,7 +245,7 @@
 		SEND_SIGNAL(I, COMSIG_ITEM_BLOCK_BEGIN, G)
 		src.setStatus("blocking", duration = INFINITE_STATUS)
 		block_begin(src)
-		src.next_click = world.time + (COMBAT_CLICK_DELAY)
+		src.next_click = world.time + src.combat_click_delay
 
 
 /mob/living/proc/grab_other(var/mob/living/target, var/suppress_final_message = 0, var/obj/item/grab_item = null)
@@ -493,7 +493,8 @@
 		if (show_msg)
 			visible_message(SPAN_COMBAT("<b>[src] narrowly dodges [attacker]'s attack!"))
 		playsound(loc, 'sound/impact_sounds/Generic_Swing_1.ogg', 50, TRUE, 1)
-
+		if (!ON_COOLDOWN(src, "matrix_sound_effect", 1 SECOND))
+			src.playsound_local(src, 'sound/effects/graffiti_hit.ogg', 40, pitch = 0.8)
 		add_stamina(STAMINA_FLIP_COST * 0.25) //Refunds some stamina if you successfully dodge.
 		stamina_stun()
 		fuckup_attack_particle(attacker)

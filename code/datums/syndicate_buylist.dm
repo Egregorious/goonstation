@@ -228,7 +228,7 @@ ABSTRACT_TYPE(/datum/syndicate_buylist/generic)
 /datum/syndicate_buylist/generic/sawfly
 	name = "Compact Sawfly"
 	item = /obj/item/old_grenade/sawfly/firsttime/withremote
-	cost = 2
+	cost = 1
 	vr_allowed = FALSE
 	desc = "A small antipersonnel robot that will not attack anyone of syndicate affiliation. It can be folded up after use."
 	can_buy = UPLINK_TRAITOR | UPLINK_SPY_THIEF
@@ -278,6 +278,7 @@ ABSTRACT_TYPE(/datum/syndicate_buylist/generic)
 	item = /obj/item/swords_sheaths/katana
 	cost = 7
 	desc = "A Japanese sword created in the fire of a dying star. Comes with a sheath for easier storage"
+	not_in_crates = TRUE
 	can_buy = UPLINK_TRAITOR | UPLINK_NUKE_OP | UPLINK_SPY_THIEF
 
 /datum/syndicate_buylist/generic/wrestling
@@ -285,6 +286,7 @@ ABSTRACT_TYPE(/datum/syndicate_buylist/generic)
 	item = /obj/item/storage/belt/wrestling
 	cost = 7
 	desc = "A haunted antique wrestling belt, imbued with the spirits of wrestlers past. Wearing it unlocks a number of wrestling moves, which can be accessed in a separate command tab."
+	not_in_crates = TRUE
 	can_buy = UPLINK_TRAITOR | UPLINK_NUKE_OP
 
 /datum/syndicate_buylist/generic/spy_sticker_kit
@@ -464,6 +466,13 @@ ABSTRACT_TYPE(/datum/syndicate_buylist/traitor)
 	item = /obj/item/device/fingerprinter
 	desc = "A tool which allows you to scan and plant fingerprints."
 	cost = 1
+
+/datum/syndicate_buylist/traitor/blowgun
+	name = "Blowgun"
+	item = /obj/item/storage/briefcase/instruments/blowgun/tranq
+	desc = "A blowgun with a set of 8 knockout darts. \"Cunningly\" disguised as a flute."
+	cost = 4
+	can_buy = UPLINK_TRAITOR | UPLINK_SPY_THIEF
 
 //////////////////////////////////////////////// Objective-specific items //////////////////////////////////////////////
 
@@ -1029,6 +1038,16 @@ ABSTRACT_TYPE(/datum/syndicate_buylist/traitor)
 	cost = 4
 	desc = "A regular looking rose hiding a poison capable of muting and briefly incapacitating anyone who smells it."
 	job = list("Mime")
+
+/datum/syndicate_buylist/traitor/record_player
+	name = "Portable Record player"
+	item = /obj/submachine/record_player/portable
+	cost = 2
+	vr_allowed = FALSE
+	not_in_crates = TRUE
+	desc = "A portable record player, so you can play tunes while committing crimes!"
+	job = list("Radio Show Host")
+	can_buy = UPLINK_TRAITOR
 
 /datum/syndicate_buylist/traitor/chicken_grenade
 	name = "Chicken Grenade"

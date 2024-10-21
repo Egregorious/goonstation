@@ -33,8 +33,6 @@
 	var/can_write_on = FALSE
 	///value corresponds to how many cleanables exist on this turf. Exists for the purpose of making fluid spreads do less checks.
 	var/tmp/messy = 0
-	var/tmp/checkinghasproximity = 0
-	var/tmp/neighcheckinghasproximity = 0
 	/// directions of this turf being blocked by directional blocking objects. So we don't need to loop through the entire contents
 	var/tmp/blocked_dirs = 0
 	/// this turf is allowing unrestricted hotbox reactions
@@ -55,6 +53,8 @@
 	var/can_break = FALSE
 	var/broken = FALSE
 	var/burnt = FALSE
+
+	var/can_build = FALSE
 
 	var/special_volume_override = -1 //if greater than or equal to 0, override
 
@@ -295,6 +295,7 @@
 	flags = FLUID_DENSE
 	turf_flags = CAN_BE_SPACE_SAMPLE
 	event_handler_flags = IMMUNE_SINGULARITY
+	can_build = TRUE
 	dense
 		icon_state = "dplaceholder"
 		density = 1
@@ -329,20 +330,20 @@
 
 /turf/space/New()
 	..()
-	if(global.dont_init_space) return
+	if(global.dont_init_space)
+		return
 	switch(icon_state)
-		if ("placeholder")
-			icon_state = "[rand(1,25)]"
+		if ("placeholder", "dplaceholder")
+			icon_state = "[((x + y) ^ ~(x * y) + z) % 25]" // rand(1,25)
 		if ("aplaceholder")
-			icon_state = "a[rand(1,10)]"
-		if ("dplaceholder")
-			icon_state = "[rand(1,25)]"
+			icon_state = "a[((x + y) ^ ~(x * y) + z) % 10]" // rand(1,10)
 
 	if (derelict_mode == 1)
 		icon = 'icons/turf/floors.dmi'
 		icon_state = "darkvoid"
 		name = "void"
 		desc = "Yep, this is fine."
+
 	#ifndef CI_RUNTIME_CHECKING
 	if(buzztile == null && prob(0.01) && src.z == Z_LEVEL_STATION) //Dumb shit to trick nerds.
 		buzztile = src
@@ -351,7 +352,9 @@
 		new/obj/item/device/key/random(src)
 	#endif
 
-	UpdateIcon() // for starlight
+	// // forbidden zone // //
+	update_icon() // HIGHLY ILLEGAL NEVER DO THIS, SPECIAL CASE IGNORE ME (for starlight)
+	// // do not pass go // //
 
 proc/repaint_space(regenerate=TRUE, starlight_alpha)
 	for(var/turf/space/T)
@@ -423,13 +426,13 @@ proc/generate_space_color()
 			starlight.layer = LIGHTING_LAYER_BASE
 			starlight.plane = PLANE_LIGHTING
 			starlight.blend_mode = BLEND_ADD
+			starlight.color = starlight_color_override ? starlight_color_override : src.color
+			if(!isnull(starlight_alpha))
+				starlight.alpha = starlight_alpha
 
-		starlight.color = starlight_color_override ? starlight_color_override : src.color
-		if(!isnull(starlight_alpha))
-			starlight.alpha = starlight_alpha
-		src.underlays = list(starlight)
+		src.underlays += starlight
 	else
-		src.underlays = null
+		src.underlays = list()
 	#endif
 
 // override for space turfs, since they should never hide anything
@@ -543,19 +546,6 @@ proc/generate_space_color()
 			if (isitem(M))
 				if (!(locate(/obj/table) in src) && !(locate(/obj/rack) in src))
 					Ar.sims_score = max(Ar.sims_score - 4, 0)
-
-	var/i = 0
-	i = 0
-	if (src.neighcheckinghasproximity > 0)
-		for (var/turf/T in range(1,src))
-			if (T.checkinghasproximity > 0)
-				for(var/thing in T)
-					var/atom/A = thing
-					// I Said No sanity check
-					if(i++ >= 50)
-						break
-					if (A.event_handler_flags & USE_PROXIMITY)
-						A.HasProximity(M, 1) //IMPORTANT MBCNOTE : ADD USE_PROXIMITY FLAG TO ANY ATOM USING HASPROX THX BB
 
 	if(!src.throw_unlimited && M?.no_gravity)
 		BeginSpacePush(M)
@@ -719,8 +709,6 @@ var/global/in_replace_with = 0
 	var/old_opaque_atom_count = src.opaque_atom_count
 
 	var/old_blocked_dirs = src.blocked_dirs
-	var/old_checkinghasproximity = src.checkinghasproximity
-	var/old_neighcheckinghasproximity = src.neighcheckinghasproximity
 
 	var/old_aiimage = src.aiImage
 	var/old_cameras = src.cameras
@@ -732,6 +720,8 @@ var/global/in_replace_with = 0
 #ifdef ATMOS_PROCESS_CELL_STATS_TRACKING
 	var/old_process_cell_operations = src.process_cell_operations
 #endif
+
+	var/old_comp_lookup = src.comp_lookup
 
 	if (new_type)
 		if(ispath(new_type, /turf/space) && !ispath(new_type, /turf/space/fluid) && delay_space_conversion()) return
@@ -827,8 +817,6 @@ var/global/in_replace_with = 0
 	new_turf.pass_unstable += old_pass_unstable
 
 	new_turf.blocked_dirs = old_blocked_dirs
-	new_turf.checkinghasproximity = old_checkinghasproximity
-	new_turf.neighcheckinghasproximity = old_neighcheckinghasproximity
 
 	new_turf.aiImage = old_aiimage
 	new_turf.cameras = old_cameras
@@ -839,6 +827,27 @@ var/global/in_replace_with = 0
 #ifdef ATMOS_PROCESS_CELL_STATS_TRACKING
 	new_turf.process_cell_operations = old_process_cell_operations
 #endif
+
+	//combine the old comp_lookup with the new one because turfs sometimes register signals in New
+	if (!src.comp_lookup)
+		src.comp_lookup = old_comp_lookup
+	else
+		for (var/signal_type in old_comp_lookup)
+			//nothing there, just copy the old one
+			if (!src.comp_lookup[signal_type])
+				src.comp_lookup[signal_type] = old_comp_lookup[signal_type]
+			//it's a list, append (this is byond so it shouldn't matter if the old one was a list or not)
+			else if (islist(comp_lookup[signal_type]))
+				logTheThing(LOG_DEBUG, null, "turf/ReplaceWith signal shit: [new_turf]: [json_encode(comp_lookup)] + [json_encode(old_comp_lookup)]")
+
+				src.comp_lookup[signal_type] |= old_comp_lookup[signal_type]
+			//it's just a datum
+			else
+				if (islist(old_comp_lookup[signal_type])) //but the old one was a list, so append
+					src.comp_lookup[signal_type] = (old_comp_lookup[signal_type] | src.comp_lookup[signal_type])
+				else //the old one wasn't a list, make it so
+					src.comp_lookup[signal_type] = (list(old_comp_lookup[signal_type]) | src.comp_lookup[signal_type])
+
 
 	//cleanup old overlay to prevent some Stuff
 	//This might not be necessary, i think its just the wall overlays that could be manually cleared here.
@@ -877,14 +886,17 @@ var/global/in_replace_with = 0
 				air_master.tiles_to_update |= N
 		else if (air_master)
 			air_master.high_pressure_delta -= src //lingering references to space turfs kept ending up in atmos lists after simulated turfs got replaced. wack!
+			air_master.active_singletons -= src
+			if (length(air_master.tiles_to_update))
+				air_master.tiles_to_update -= src
 
 		if (air_master && oldparent) //Handling air parent changes for oldparent for Simulated -> Anything
 			air_master.groups_to_rebuild |= oldparent //Puts the oldparent into a queue to update the members.
+			oldparent.members -= src //can we like not have space in these lists pleaseeee :) -cringe
+			oldparent.borders?.Remove(src)
 
 
-	if (istype(new_turf, /turf/simulated))
-		// tells the atmos system "hey this tile changed, maybe rebuild the group / borders"
-		new_turf.update_nearby_tiles(1)
+	new_turf.update_nearby_tiles(1)
 
 	#ifdef CHECK_MORE_RUNTIMES
 	in_replace_with--
@@ -1239,32 +1251,35 @@ TYPEINFO(/turf/simulated)
 		step(user.pulling, get_dir(fuck_u, src))
 	return
 
-/turf/space/attackby(obj/item/C, mob/user)
-	var/area/A = get_area (user)
-	if (istype(A, /area/supply/spawn_point || /area/supply/delivery_point || /area/supply/sell_point))
-		boutput(user, SPAN_ALERT("You can't build here."))
-		return
-	var/obj/item/rods/R = C
-	if (istype(R))
-		if (locate(/obj/lattice, src)) return // If there is any lattice on the turf, do an early return.
+/turf/attackby(obj/item/C, mob/user)
+	if(src.can_build)
+		var/area/A = get_area (user)
+		var/obj/item/rods/R = C
+		if (istype(R))
+			if (istype(A, /area/supply/spawn_point || /area/supply/delivery_point || /area/supply/sell_point))
+				boutput(user, SPAN_ALERT("You can't build here."))
+				return
+			if (locate(/obj/lattice, src)) return // If there is any lattice on the turf, do an early return.
 
-		boutput(user, SPAN_NOTICE("Constructing support lattice ..."))
-		playsound(src, 'sound/impact_sounds/Generic_Stab_1.ogg', 50, TRUE)
-		R.change_stack_amount(-1)
-		var/obj/lattice/lattice = new(src)
-		lattice.auto_connect(to_walls=TRUE, to_all_turfs=TRUE, force_connect=TRUE)
-		if (R.material)
-			src.setMaterial(C.material)
-		return
-
-	if (istype(C, /obj/item/tile))
-		//var/obj/lattice/L = locate(/obj/lattice, src)
-		var/obj/item/tile/T = C
-		if (T.amount >= 1)
-			for(var/obj/lattice/L in src)
-				qdel(L)
+			boutput(user, SPAN_NOTICE("Constructing support lattice ..."))
 			playsound(src, 'sound/impact_sounds/Generic_Stab_1.ogg', 50, TRUE)
-			T.build(src)
+			R.change_stack_amount(-1)
+			var/obj/lattice/lattice = new(src)
+			lattice.auto_connect(to_walls=TRUE, to_all_turfs=TRUE, force_connect=TRUE)
+			if (R.material)
+				src.setMaterial(C.material)
+			return
+
+		if (istype(C, /obj/item/tile))
+			if (istype(A, /area/supply/spawn_point || /area/supply/delivery_point || /area/supply/sell_point))
+				boutput(user, SPAN_ALERT("You can't build here."))
+				return
+			var/obj/item/tile/T = C
+			if (T.amount >= 1)
+				for(var/obj/lattice/L in src)
+					qdel(L)
+				playsound(src, 'sound/impact_sounds/Generic_Stab_1.ogg', 50, TRUE)
+				T.build(src)
 
 #if defined(MAP_OVERRIDE_POD_WARS)
 /turf/proc/edge_step(var/atom/movable/A, var/newx, var/newy)
