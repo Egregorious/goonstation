@@ -64,6 +64,7 @@ ABSTRACT_TYPE(/datum/bioEffect)
 	var/degrade_to = null // what this mutation turns into if stability is too low
 	///if this mutation should degrade after timing out
 	var/degrade_after = FALSE
+	var/booth_quant = 5 // how many instances will be added every time this gene is sent to the booth
 
 	///groups of mutually exclusive bioeffects
 	var/effect_group = null

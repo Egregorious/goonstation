@@ -13,6 +13,7 @@
 		BE = bioeffect
 		name = BE.name
 		id = BE.id
+		uses = BE.booth_quant
 
 		desc = description
 		cost=price
