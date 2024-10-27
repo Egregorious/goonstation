@@ -618,11 +618,11 @@
 				for (var/datum/geneboothproduct/P as anything in GB.offered_genes)
 					if (P.id == E.id && P.name == E.name)
 						already_has = P
-						P.uses += 5
+						P.uses += P.BE.booth_quant
 						P.desc = booth_effect_desc
 						P.cost = booth_effect_cost
 						P.registered_sale_id = registered_id
-						scanner_alert(ui.user, "Sent 5 of '[P.name]' to gene booth.")
+						scanner_alert(ui.user, "Sent [P.BE.booth_quant] of '[P.name]' to gene booth.")
 						GB.reload_contexts()
 						break
 				if (!already_has)
@@ -632,7 +632,7 @@
 					GB.offered_genes += new /datum/geneboothproduct(NEW,booth_effect_desc,booth_effect_cost,registered_id)
 					if (length(GB.offered_genes) == 1)
 						GB.select_product(GB.offered_genes[1])
-					scanner_alert(ui.user, "Sent 5 of '[NEW.name]' to gene booth.")
+					scanner_alert(ui.user, "Sent [NEW.booth_quant] of '[NEW.name]' to gene booth.")
 					GB.reload_contexts()
 			on_ui_interacted(ui.user)
 		if("splicechromosome")
