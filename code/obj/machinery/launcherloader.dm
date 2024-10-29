@@ -419,14 +419,6 @@
 				boutput(user, SPAN_NOTICE("Card authorized."))
 				src.scan = id_card
 				src.updateUsrDialog()
-				/* var/enterpin = user.enter_pin("Barcode Computer")
-				if (enterpin == id_card.pin)
-					boutput(user, SPAN_NOTICE("Card authorized."))
-					src.scan = id_card
-					src.updateUsrDialog()
-				else
-					boutput(user, SPAN_ALERT("PIN incorrect."))
-					src.scan = null */
 			else
 				boutput(user, SPAN_ALERT("No bank account associated with this ID found."))
 				src.scan = null
