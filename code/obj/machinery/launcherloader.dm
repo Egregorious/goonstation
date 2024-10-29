@@ -416,14 +416,17 @@
 			boutput(user, SPAN_NOTICE("You swipe the ID card."))
 			account = FindBankAccountByName(id_card.registered)
 			if(account)
-				var/enterpin = user.enter_pin("Barcode Computer")
+				boutput(user, SPAN_NOTICE("Card authorized."))
+				src.scan = id_card
+				src.updateUsrDialog()
+				/* var/enterpin = user.enter_pin("Barcode Computer")
 				if (enterpin == id_card.pin)
 					boutput(user, SPAN_NOTICE("Card authorized."))
 					src.scan = id_card
 					src.updateUsrDialog()
 				else
 					boutput(user, SPAN_ALERT("PIN incorrect."))
-					src.scan = null
+					src.scan = null */
 			else
 				boutput(user, SPAN_ALERT("No bank account associated with this ID found."))
 				src.scan = null
