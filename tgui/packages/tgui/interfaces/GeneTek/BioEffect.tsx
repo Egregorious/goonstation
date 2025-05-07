@@ -94,9 +94,20 @@ export const BioEffect = (props) => {
   );
   let activeOrStorage = isActive || isStorage; // haha, what a dumb way to reduce arrow function complexity
 
-  const GeneActionButtons = () => { // helper method just to reduce arrow function complexity
-    const activeOrStorage = isActive || isStorage;
+  // helper methods just to reduce arrow function complexity.
+  const SamplerButton = () => {
+    return (
+    <Button
+            disabled={onCooldown(equipmentCooldown, "Injectors") || materialCur < injectorCost}
+              icon="syringe"
+              color="green"
+              onClick={() => act("sampler", { ref })}>
+              Sampler
+    </Button>
+    );
+  };
 
+  const GeneActionButtons = () => {
     return (
       <>
         <UnlockModal />
@@ -227,13 +238,7 @@ export const BioEffect = (props) => {
               </Button>
             )}
           {research >= 2 && samplerCost >= 0 && haveDevice(equipmentCooldown, "Injectors") && (
-            <Button
-              disabled={onCooldown(equipmentCooldown, "Injectors")}
-              icon="syringe"
-              color="green"
-              onClick={() => act("sampler", { ref })}>
-              Sampler
-            </Button>
+            SamplerButton()
           )}
           {activeOrStorage && !!toSplice && (
             <Button
