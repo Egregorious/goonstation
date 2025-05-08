@@ -769,7 +769,8 @@
 			if (!subject)
 				return
 			src.log_me(subject, "mutation added", E)
-			subject.bioHolder.AddEffectInstance(E)
+			if (E.research_level < 3) subject.bioHolder.AddNewPoolEffect(E.id, FALSE, FALSE)
+			else subject.bioHolder.AddEffectInstance(E)
 			saved_mutations -= E
 			scanner_alert(ui.user, "Mutation successfully added to occupant.")
 			on_ui_interacted(ui.user)
