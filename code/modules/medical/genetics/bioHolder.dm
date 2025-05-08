@@ -547,7 +547,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 		selectedNew.holder = src
 		selectedNew.owner = src.owner
 		selectedNew.innate_potential = (innate)
-		selectedNew.innate_potential = (innate)
 		effectPool[selectedNew.id] = selectedNew
 		return 1
 
@@ -615,7 +614,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 				selectedNew.holder = src
 				selectedNew.owner = src.owner
 				selectedNew.innate_potential = 1
-				selectedNew.innate_potential = 1
 				effectPool[selectedNew.id] = selectedNew
 				filteredGood.Remove(selectedG)
 			else
@@ -642,7 +640,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 					selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 					selectedNew.holder = src
 					selectedNew.owner = src.owner
-					selectedNew.innate_potential = 1
 					selectedNew.innate_potential = 1
 					effectPool[selectedNew.id] = selectedNew
 					filteredSecret.Remove(selectedS)
@@ -872,7 +869,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 		if (!effect.innate_potential)
 			src.genetic_stability += effect.stability_loss
 			src.genetic_stability = max(0,src.genetic_stability)
-		effect.innate_potential = 0 //Fix for bug causing infinitely exploitable stability gain / loss
 		effect.innate_potential = 0 //Fix for bug causing infinitely exploitable stability gain / loss
 
 		if (owner)
