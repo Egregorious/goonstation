@@ -515,7 +515,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 			if(scramble) newEffect.dnaBlocks.ModBlocks()
 			newEffect.holder = src
 			newEffect.owner = src.owner
-			newEffect.innate_potential = (innate ? 1 : 0)
+			newEffect.innate_potential = innate
 			return 1
 
 		return 0
@@ -546,7 +546,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 		selectedNew.dnaBlocks.ModBlocks() //Corrupt the local copy
 		selectedNew.holder = src
 		selectedNew.owner = src.owner
-		selectedNew.innate_potential = (innate ? 1 : 0)
+		selectedNew.innate_potential = (innate)
 		effectPool[selectedNew.id] = selectedNew
 		return 1
 
