@@ -550,8 +550,9 @@
 			if (!E.dnaBlocks.sequenceCorrect())
 				return
 			var/mob/living/subject = get_scan_subject()
-			src.log_me(subject, "mutation activated", E)
-			if (subject.bioHolder.ActivatePoolEffect(E) && !isnpcmonkey(subject) && subject.client)
+			if (E.research_level < 3) subject.bioHolder.AddNewPoolEffect(E.id)
+			else if (subject.bioHolder.ActivatePoolEffect(E) && !isnpcmonkey(subject) && subject.client)
+				src.log_me(subject, "mutation activated", E)
 				activated_bonus(usr)
 			on_ui_interacted(ui.user)
 		if("mutantrace")

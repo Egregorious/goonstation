@@ -455,7 +455,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 		for (var/datum/bioEffect/curr as anything in src.effects)
 			var/datum/bioEffect/E = src.effects[curr]
 			if (E.innate_potential == 1)
-			if (E.innate_potential == 1)
 				DeactivatePoolEffect(E)
 
 		return
@@ -504,7 +503,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 		mobAppearance.UpdateMob()
 		return E
 
-	proc/AddNewPoolEffect(var/idToAdd, var/scramble=FALSE, var/innate=TRUE, var/innate=TRUE)
+	proc/AddNewPoolEffect(var/idToAdd, var/scramble=FALSE, var/innate=TRUE)
 		if(HasEffect(idToAdd) || HasEffectInPool(idToAdd))
 			return 0
 
@@ -521,7 +520,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 
 		return 0
 
-	proc/AddRandomNewPoolEffect(var/innate=TRUE)
 	proc/AddRandomNewPoolEffect(var/innate=TRUE)
 		var/list/filteredList = list()
 
@@ -744,8 +742,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 
 		age += (toCopy.age - age) / (11 - progress)
 
-	proc/AddEffect(var/idToAdd, var/power = 0, var/timeleft = 0, var/do_stability = 1, var/magical = 0, var/safety = 0, scannable=0, innate = 0)
-	proc/AddEffect(var/idToAdd, var/power = 0, var/timeleft = 0, var/do_stability = 1, var/magical = 0, var/safety = 0, var/for_scanning=0, var/set_innate = FALSE)
+	proc/AddEffect(var/idToAdd, var/power = 0, var/timeleft = 0, var/do_stability = 1, var/magical = 0, var/safety = 0, var/scannable=0, var/innate = FALSE)
 		//Adds an effect to this holder. Returns the newly created effect if succesful else 0.
 		if(issilicon(src.owner))
 			return 0
@@ -803,10 +800,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 				src.genetic_stability = max(0,src.genetic_stability)
 
 			// set the innateness if applicable. This is mostly just for GeneTek aesthetics, since stability is dealt with already.
-			if (set_innate) newEffect.innate_potential = 1
-
-			// set the innateness if applicable. This is mostly just for GeneTek aesthetics, since stability is dealt with already.
-			if (set_innate) newEffect.innate_potential = 1
+			if (innate) newEffect.innate_potential = 1
 
 			if(owner)
 				OutputGainOrLoseMsg(newEffect, TRUE)
