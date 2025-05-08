@@ -69,6 +69,7 @@ interface BioEffect {
   time: number;
   canResearch: BooleanLike;
   canInject: BooleanLike;
+  innate_potential: BooleanLike;
   canScramble: BooleanLike;
   canReclaim: BooleanLike;
   spliceError: string | null;

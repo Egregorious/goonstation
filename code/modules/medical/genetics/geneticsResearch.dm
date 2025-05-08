@@ -489,6 +489,7 @@ var/datum/geneticsResearchManager/genResearch = new()
 		// and can_make_injector, for genes that have been exhausted
 		scannedBE.name = BE.name
 		scannedBE.can_make_injector = BE.can_make_injector
+		scannedBE.innate_potential = BE.innate_potential
 		scan.dna_active += scannedBE
 	for (var/bioEffectId in L.bioHolder.effectPool)
 		var/datum/bioEffect/BE = L.bioHolder.GetEffectFromPool(bioEffectId)
@@ -496,6 +497,7 @@ var/datum/geneticsResearchManager/genResearch = new()
 		scannedBE.dnaBlocks.blockList = BE.dnaBlocks.blockList
 		scannedBE.dnaBlocks.blockListCurr = BE.dnaBlocks.blockListCurr
 		scannedBE.can_make_injector = BE.can_make_injector
+		scannedBE.innate_potential = BE.innate_potential
 		scan.dna_pool += scannedBE
 
 	return scan
