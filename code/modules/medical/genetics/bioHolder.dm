@@ -870,7 +870,6 @@ var/list/datum/bioEffect/mutini_effects = list()
 	proc/RemoveEffectInstance(var/datum/bioEffect/effect)
 		effect.OnRemove()
 		if (!effect.innate_potential)
-		if (!effect.innate_potential)
 			src.genetic_stability += effect.stability_loss
 			src.genetic_stability = max(0,src.genetic_stability)
 		effect.innate_potential = 0 //Fix for bug causing infinitely exploitable stability gain / loss
