@@ -611,7 +611,7 @@ var/list/datum/bioEffect/mutini_effects = list()
 		var/isNPC = (!owner || (!owner.client && (isnpc(owner) || isnpcmonkey(owner))))
 		// There is surely not a chance in hell that converting from string to int is the correct way to do this,
 		// but it doesn't seem to like using ints as keys.
-		var quant = text2num(weighted_pick(list("7" = 10, "6" = 35, "5" = 50, "4" = 5)))
+		var quant = text2num(weighted_pick(list("10" = 1, "9" = 2, "8" = 5, "7" = 7, "6" = 30, "5" = 40, "4" = 7, "3" = 5, "2" = 2, "1" = 1)))
 
 		for(var/g=0, g<(isNPC ? 10 - quant : quant), g++)
 			var/datum/bioEffect/selectedG = weighted_pick(filteredGood)
