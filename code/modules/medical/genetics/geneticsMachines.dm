@@ -550,8 +550,7 @@
 			if (!E.dnaBlocks.sequenceCorrect())
 				return
 			var/mob/living/subject = get_scan_subject()
-			if (E.research_level < 3) subject.bioHolder.AddNewPoolEffect(E.id)
-			else if (subject.bioHolder.ActivatePoolEffect(E) && !isnpcmonkey(subject) && subject.client)
+			if (subject.bioHolder.ActivatePoolEffect(E) && !isnpcmonkey(subject) && subject.client)
 				src.log_me(subject, "mutation activated", E)
 				activated_bonus(usr)
 			on_ui_interacted(ui.user)
@@ -609,7 +608,7 @@
 			subject.bioHolder.RemoveAllEffects(null, TRUE)
 			subject.bioHolder.BuildEffectPool()
 			if (addEffect) // re-mutantify if we would have been able to anyway
-				subject.bioHolder.AddEffect(addEffect, , , 0)
+				subject.bioHolder.AddEffect(addEffect, , , , , , , 0)
 			if (genResearch.emitter_radiation > 0)
 				subject.take_radiation_dose((genResearch.emitter_radiation/75) * 1.5 SIEVERTS)
 			src.equipment_cooldown(GENETICS_EMITTERS, 1200)

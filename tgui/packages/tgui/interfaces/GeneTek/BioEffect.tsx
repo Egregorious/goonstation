@@ -82,7 +82,6 @@ export const BioEffect = (props) => {
     research,
     canResearch,
     canInject,
-    innate_potential,
     canScramble,
     canReclaim,
     spliceError,
@@ -103,7 +102,7 @@ export const BioEffect = (props) => {
         icon="syringe"
         color="green"
         onClick={() => act("sampler", { ref })}>
-        Sampler{samplerCost}
+        Sampler
       </Button>
     );
   };
@@ -236,7 +235,7 @@ export const BioEffect = (props) => {
                 icon="syringe"
                 onClick={() => act('activator', { ref })}
               >
-                Activator{samplerCost}
+                Activator
               </Button>
             )}
           {research >= 2 &&
