@@ -114,7 +114,7 @@ ADMIN_INTERACT_PROCS(/obj/item/genetics_injector/dna_injector, proc/admin_comman
 		desc = "A syringe designed to take a sample of a living organism's genes."
 		var/gene_to_sample = null // the gene to be sampled
 		var/expended_properly = 0
-		icon_state = "activator_1"
+		icon_state = "sampler"
 
 		injected(var/mob/living/carbon/user,var/mob/living/carbon/target)
 			if (isnull(gene_to_sample)) return
@@ -145,11 +145,11 @@ ADMIN_INTERACT_PROCS(/obj/item/genetics_injector/dna_injector, proc/admin_comman
 		update_appearance()
 			if(src.uses < 1)
 				if (expended_properly)
-					src.icon_state = "activator_3"
-					src.desc = "A [src] that has been filled with a sample of a gene."
+					src.icon_state = "sampler_success"
+					src.desc = "A [src] that has been filled with a sample of a gene. It should be inserted into a genetics computer."
 					src.name = "filled " + src.name
 				else
-					src.icon_state = "activator_2"
+					src.icon_state = "sampler_fail"
 					src.desc = "A [src] that has been improperly expended. It should be discarded."
 					src.name = "expended " + src.name
 
