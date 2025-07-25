@@ -2508,11 +2508,11 @@ ABSTRACT_TYPE(/datum/bioEffect/power/critter)
 /// Global instances of egg-laying powers for individual chicken types are lazily instantiated during the first spawn of the relevant chicken.
 /datum/bioEffect/power/lay_egg
 	name = "Galliformes Oviparity"
-	desc = "Allows the subject's body to form and expulse unfertilised zygotes."
+	desc = "Enables the somatic synthesis and expulsion of non-zygotic macrolecithal ova."
 	icon_state = "lay_egg"
 	id = "lay_egg"
 	effect_group = "lay_egg"
-	cooldown = 6 MINUTES
+	cooldown = 10 MINUTES
 	ability_path = /datum/targetable/geneticsAbility/lay_egg
 	occur_in_genepools = 0
 	stability_loss = 15
