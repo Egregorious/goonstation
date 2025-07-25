@@ -134,9 +134,9 @@ ABSTRACT_TYPE(/datum/bioEffect)
 
 	/// Gets a copy of this effect. Used to build local effect pool from global instance list.
 	/// Please don't use this for anything else as it might not work as you think it should.
-	proc/GetCopy()
+	proc/GetCopy(newID = null)
 
-		var/datum/bioEffect/E = new src.type()
+		var/datum/bioEffect/E = new src.type(0, newID)
 		E.dnaBlocks.blockList = src.dnaBlocks.blockList
 		//Since we assume that the effect being copied is the one in the global pool we copy
 		//a REFERENCE to its correct sequence into the new instance.

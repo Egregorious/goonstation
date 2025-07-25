@@ -35,6 +35,8 @@ All other chickens in this file are non-secret. Please be respectful.
 	fits_under_table = 1
 	hand_count = 2
 
+	has_genes = TRUE
+
 	can_throw = 1
 	can_grab = 1
 	can_disarm = 1
@@ -92,6 +94,16 @@ All other chickens in this file are non-secret. Please be respectful.
 				src.ai = new /datum/aiHolder/chicken/hen/aggressive(src)
 			else
 				src.ai = new /datum/aiHolder/chicken/hen(src)
+
+		// Lazily instantiate the global instance of the egg-laying power for this chicken type if it doesn't already exist.
+		// Not a fan of this being here, but because Byond doesn't do constants it somewhat makes sense for it to happen only when a chicken is spawned.
+		var/powerID = "lay_egg_[src.chicken_id]"
+		if (!bioEffectList[powerID])
+			var/datum/bioEffect/power/lay_egg/layegg_inst = new /datum/bioEffect/power/lay_egg(for_global_list = TRUE, newID = powerID)
+			layegg_inst.setup(src, powerID)
+			layegg_inst.dnaBlocks.GenerateBlocks()
+			bioEffectList[powerID] = layegg_inst
+		src.bioHolder.AddNewPoolEffect(powerID)
 
 	disposing()
 		STOP_TRACKING

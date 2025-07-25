@@ -12,8 +12,8 @@ ABSTRACT_TYPE(/datum/bioEffect/power)
 	var/ability_path = null
 	var/datum/targetable/geneticsAbility/ability = null
 
-	New()
-		..()
+	New(for_global_list = 0)
+		..(for_global_list)
 		check_ability_owner()
 
 	disposing()
@@ -45,6 +45,7 @@ ABSTRACT_TYPE(/datum/bioEffect/power)
 			icon_state = AB.icon_state
 			AB.owner = src.owner
 			src.owner.abilityHolder.updateButtons() //have to manually update because the cooldown is stored on the bioeffect
+			return AB
 
 	//varedit support for cooldowns
 	onVarChanged(variable, oldval, newval)
@@ -2502,3 +2503,109 @@ ABSTRACT_TYPE(/datum/bioEffect/power/critter)
 			fading = TRUE
 			animate(owner, time = 10, alpha = 255, easing = LINEAR_EASING)
 			fading = FALSE
+
+
+/// Global instances of egg-laying powers for individual chicken types are lazily instantiated during the first spawn of the relevant chicken.
+/datum/bioEffect/power/lay_egg
+	name = "Galliformes Oviparity"
+	desc = "Allows the subject's body to form and expulse unfertilised zygotes."
+	icon_state = "lay_egg"
+	id = "lay_egg"
+	effect_group = "lay_egg"
+	cooldown = 6 MINUTES
+	ability_path = /datum/targetable/geneticsAbility/lay_egg
+	occur_in_genepools = 0
+	stability_loss = 15
+	var/egg_type = /obj/item/reagent_containers/food/snacks/ingredient/egg/chicken
+	var/chicken_breed
+
+	New(for_global_list = 0, newID)
+		if (istext(newID))
+			id = newID
+		..(for_global_list)
+
+	/// Setup for the global instance of a new chicken-type power.
+	proc/setup(var/mob/living/critter/small_animal/ranch_base/chicken/chicken, var/new_id)
+		if (!chicken)
+			return
+		src.egg_type = chicken.egg_type
+		src.name = "[capitalize(chicken.chicken_id)] Galliformes Oviparity"
+		src.degrade_to = "lay_egg" // Chicken-type specific versions degrade to the generic one.
+		src.chicken_breed = chicken.chicken_id
+
+	OnAdd()
+		..()
+		owner.AddComponent(/datum/component/ability_on_emote, "fart", src.ability_path)
+
+	OnRemove()
+		. = ..()
+		var/list/datum/component/comps = owner.GetComponents(/datum/component/ability_on_emote)
+		for(var/datum/component/ability_on_emote/comp in comps)
+			if (comp.ability_path == ability_path && comp.emote == "fart")
+				comp.RemoveComponent()
+				break
+
+	GetCopy()
+		var/datum/bioEffect/power/lay_egg/newBE = ..(src.id)
+		newBE.name = src.name
+		newBE.egg_type = src.egg_type
+		newBE.degrade_to = src.degrade_to
+		newBE.chicken_breed = src.chicken_breed
+		return newBE
+
+	check_ability_owner()
+		var/datum/targetable/geneticsAbility/lay_egg/ability = ..()
+		if (!ability)
+			return ability
+		ability.egg_type = src.egg_type
+		if (src.chicken_breed)
+			ability.change_name("Lay [capitalize(src.chicken_breed)] Egg")
+
+/datum/targetable/geneticsAbility/lay_egg
+	name = "Lay Egg"
+	desc = "Lay an egg."
+	cooldown = 30 SECONDS
+	start_on_cooldown = 1
+	icon_state = "lay_egg"
+	targeted = 0
+	target_anything = 1
+	var/egg_type = /obj/item/reagent_containers/food/snacks/ingredient/egg/chicken
+
+/datum/targetable/geneticsAbility/lay_egg/cast(atom/target)
+	if (..() == CAST_ATTEMPT_SUCCESS)
+		return CAST_ATTEMPT_SUCCESS
+	playsound(src.owner.loc, 'sound/effects/chickenpop.ogg', 50, 0)
+	SPAWN(5)
+		if (!src.owner)
+			return
+		var/obj/item/reagent_containers/food/snacks/ingredient/egg/chicken/egg = new egg_type()
+		egg.set_loc(get_turf(src.owner))
+		egg.infertile = TRUE
+		src.owner.visible_message(SPAN_NOTICE("<b>[src.owner.name]</b> lays an egg."),
+									SPAN_NOTICE("You lay an egg."),
+		 							SPAN_NOTICE("Someone lays an egg."))
+	return CAST_ATTEMPT_SUCCESS
+
+/datum/targetable/geneticsAbility/lay_egg/cast_misfire(atom/target)
+	playsound(src.owner.loc, 'sound/effects/chickenpop.ogg', 50, 0)
+
+	SPAWN(5)
+		if (!src.owner)
+			return
+		var/obj/item/reagent_containers/food/snacks/ingredient/egg/chicken/egg = new egg_type()
+		egg.set_loc(get_turf(src.owner))
+		egg.infertile = TRUE
+		// Throw the egg at a turf behind the player
+		var/turf/T = locate(
+			src.owner.x + (src.owner.dir & EAST ? -rand(2,4) : (src.owner.dir & WEST ? rand(2,4) : rand(-1,1))),
+			src.owner.y + (src.owner.dir & NORTH ? -rand(2,4) : (src.owner.dir & SOUTH ? rand(2,4) : rand(-1,1))),
+			src.owner.z
+		)
+		egg.throw_at(T, 32, 2)
+		src.owner.visible_message(SPAN_ALERT("<b>[src.owner.name]</b> lays an egg too hard."),
+									SPAN_ALERT("You try to lay an egg, but you try too hard."),
+		 							SPAN_ALERT("Someone lays an egg too hard."))
+		src.owner.emote("scream")
+		src.owner?.organHolder?.damage_organ(rand(10, 30), 0, 0, "intestines")
+		owner.TakeDamage("chest", rand(8, 16), 0, 0, DAMAGE_BLUNT)
+	return CAST_ATTEMPT_SUCCESS

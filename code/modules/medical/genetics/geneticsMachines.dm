@@ -219,7 +219,7 @@
 	return null
 
 /obj/machinery/computer/genetics/proc/get_occupant_preview()
-	if (!src.scanner)
+	if (!src.scanner || !ishuman(scanner.occupant)) // the occupant preview seems to only be set up for humans for now I think
 		return null
 	if (!src.scanner.occupant_preview)
 		src.scanner.occupant_preview = new()

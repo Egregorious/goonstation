@@ -910,7 +910,9 @@
 			src.holder = null
 		..()
 
+
 	proc
+		/// params: ["silent_fail"] will suppress failure messages
 		handleCast(atom/target, params)
 			var/result = tryCast(target, params)
 #ifdef NO_COOLDOWNS
@@ -947,7 +949,7 @@
 				logTheThing(LOG_DEBUG, usr, "orphaned ability clicked: [name]. ([holder ? "no owner" : "no holder"])")
 				return CAST_ATTEMPT_FAIL_CAST_FAILURE
 			if (src.holder.locked && !src.ignore_holder_lock)
-				boutput(holder.owner, SPAN_ALERT("You're already casting an ability."))
+				trycast_boutput(params, holder.owner, SPAN_ALERT("You're already casting an ability."))
 				return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 			if (src.lock_holder)
 				src.holder.locked = TRUE
@@ -955,29 +957,29 @@
 				src.holder.locked = FALSE
 				return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 			if (!src.holder.cast_while_dead && isdead(holder.owner))
-				boutput(holder.owner, SPAN_ALERT("You cannot cast this ability while you are dead."))
+				trycast_boutput(params, holder.owner, SPAN_ALERT("You cannot cast this ability while you are dead."))
 				src.holder.locked = FALSE
 				return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 			if (last_cast > world.time)
-				boutput(holder.owner, SPAN_ALERT("That ability is on cooldown for [round((last_cast - world.time) / 10)] seconds."))
+				trycast_boutput(params, holder.owner, SPAN_ALERT("That ability is on cooldown for [round((last_cast - world.time) / 10)] seconds."))
 				src.holder.locked = FALSE
 				return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 			if (src.restricted_area_check)
 				var/turf/T = get_turf(holder.owner)
 				if (!T || !isturf(T))
-					boutput(holder.owner, SPAN_ALERT("That ability doesn't seem to work here."))
+					trycast_boutput(params, holder.owner, SPAN_ALERT("That ability doesn't seem to work here."))
 					src.holder.locked = FALSE
 					return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 				switch (src.restricted_area_check)
 					if (ABILITY_AREA_CHECK_ALL_RESTRICTED_Z)
 						if (isrestrictedz(T.z))
-							boutput(holder.owner, SPAN_ALERT("That ability doesn't seem to work here."))
+							trycast_boutput(params, holder.owner, SPAN_ALERT("That ability doesn't seem to work here."))
 							src.holder.locked = FALSE
 							return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 					if (ABILITY_AREA_CHECK_VR_ONLY)
 						var/area/A = get_area(T)
 						if (A && istype(A, /area/sim))
-							boutput(holder.owner, SPAN_ALERT("You can't use this ability in virtual reality."))
+							trycast_boutput(params, holder.owner, SPAN_ALERT("You can't use this ability in virtual reality."))
 							src.holder.locked = FALSE
 							return CAST_ATTEMPT_FAIL_NO_COOLDOWN
 			if (src.targeted && src.target_nodamage_check && (target && target != holder.owner && check_target_immunity(target)))
@@ -993,6 +995,11 @@
 				localholder.locked = FALSE
 				if (!.)
 					localholder.deductPoints(pointCost)
+
+		/// Helper method just to keep from cluttering trycast up
+		trycast_boutput(params, target, message)
+			if (!islist(params) || !params["silent_fail"])
+				boutput(target, message)
 
 		logCast(atom/target)
 			if (src.targeted)
@@ -1112,6 +1119,12 @@
 
 		flip_callback()
 			.= 0
+
+	proc/change_name(var/new_name)
+		if (!istext(new_name))
+			return
+		src.name = new_name
+		src.object?.name = new_name
 
 /atom/movable/screen/pseudo_overlay
 	// this is hack as all get out
