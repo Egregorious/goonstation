@@ -190,6 +190,7 @@ ABSTRACT_TYPE(/obj/item/reagent_containers/food/snacks/plant)
 	name = "tomato"
 	crop_prefix = "seething "
 	desc = "You say tomato, I toolbox you."
+	icon_state = "tomato-seething"
 
 	throw_impact(atom/A, datum/thrown_thing/thr)
 		var/turf/T = get_turf(A)
