@@ -153,7 +153,6 @@ TYPEINFO(/obj/machinery/microwave)
 			return
 		user.u_equip(O)
 		O.set_loc(src)
-		src.visible_message(SPAN_NOTICE("[user] adds [O] to [src].(with the)"))
 		src.visible_message(SPAN_NOTICE("[user] adds [O] to [src]."))
 		tgui_process.update_uis(src)
 	else
