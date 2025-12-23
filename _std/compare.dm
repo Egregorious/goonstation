@@ -58,3 +58,8 @@
 
 /proc/cmp_gang_score_desc(datum/gang/a, datum/gang/b)
 	return cmp_numeric_dsc(a.score_total, b.score_total)
+
+/proc/cmp_product_name_asc(datum/data/vending_product/a, datum/data/vending_product/b)
+	if (a.sorting_priority != b.sorting_priority)
+		return b.sorting_priority - a.sorting_priority
+	return sorttext(b.product_name, a.product_name)

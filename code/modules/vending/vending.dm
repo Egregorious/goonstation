@@ -1,6 +1,7 @@
 /datum/data/vending_product
 	var/product_name = "generic"
 	var/atom/product_path = null
+	var/sorting_priority = 0 // higher numbers are sorted first in product lists
 
 	var/product_cost
 	var/product_amount
@@ -12,7 +13,7 @@
 	var/static/list/product_name_cache = list(/obj/item/reagent_containers/mender/brute = "brute auto-mender", /obj/item/reagent_containers/mender/burn = "burn auto-mender")
 
 
-	New(productpath, amount=0, cost=0, hidden=0, logged_on_vend=FALSE, infinite=FALSE)
+	New(productpath, amount=0, cost=0, hidden=0, logged_on_vend=FALSE, infinite=FALSE, sorting_priority=0)
 		..()
 		if (istext(productpath))
 			productpath = text2path(productpath)
@@ -20,6 +21,7 @@
 			qdel(src)
 			return
 		src.product_path = productpath
+		src.sorting_priority = sorting_priority
 
 		var/name_check = product_name_cache[productpath]
 		if (name_check)
@@ -1675,7 +1677,7 @@ ABSTRACT_TYPE(/obj/machinery/vending/cola)
 
 	create_products(restocked)
 		..()
-		product_list += new/datum/data/vending_product(/obj/item/paper/book/from_file/mechanicbook, 30)
+		product_list += new/datum/data/vending_product(/obj/item/paper/book/from_file/mechanicbook, 30, sorting_priority=1)
 		product_list += new/datum/data/vending_product(/obj/item/paper/book/from_file/text_to_music_com, 5)
 		product_list += new/datum/data/vending_product(/obj/item/mechanics/andcomp, 30)
 		product_list += new/datum/data/vending_product(/obj/item/mechanics/association, 30)
@@ -1727,6 +1729,8 @@ ABSTRACT_TYPE(/obj/machinery/vending/cola)
 		product_list += new/datum/data/vending_product(/obj/item/mechanics/screen_canvas, 30)
 		product_list += new/datum/data/vending_product(/obj/item/mechanics/message_sign, 10)
 		product_list += new/datum/data/vending_product(/obj/item/mechanics/hangman, 10)
+		sortList(product_list, GLOBAL_PROC_REF(cmp_product_name_asc))
+
 /obj/machinery/vending/mechanics/attackby(obj/item/W, mob/user)
 	if(!istype(W,/obj/item/mechanics))
 		..()
